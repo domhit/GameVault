@@ -1,16 +1,20 @@
-# GameVault 0.2.0
+# GameVault v0.4.0
 
-Self-hosted game collection and PS4 backup archive with PostgreSQL.
+Self-hosted game collection, backup catalog and metadata monitor.
 
-## Changes in 0.2.0
-- Desktop UI redesigned around two independently scrolling panes.
-- Game details always open at the top without losing the left library scroll position.
-- Shows TitleID, current value, publisher, developer, genre, release date, collection status, completeness and completion state.
-- Shows Game Collector cover URLs when they are reachable; local Game Collector paths remain placeholders until the cover importer is implemented.
-- Shows missing-metadata status and filter.
-- PS4 XLSX import writes the normalized CUSA TitleID back to a matched Game Collector PS4 record.
-- More robust cleanup of package names for Game/Update/Patch/DLC matching.
-- Synology compose paths use `/volume1/docker/gamevault`.
+## Highlights
+- Bulk metadata refresh with PostgreSQL persistence.
+- PS4 TitleID backfill from linked packages.
+- PS4 title enrichment from the SerialStation-derived open dataset.
+- PS4 latest-known update comparison from the Sony update summary dataset. GameVault never downloads PKG files.
+- Xbox 360 metadata and artwork through x360db.
+- PS2 and PS3 serial-based community cover lookup, downloaded once to `/data/covers`.
+- Platform badges and colors: PS4 blue, PS3 red, PS2 gold, Xbox 360 green.
+- Update status filters and counters.
+- Existing v0.2 PostgreSQL database is migrated automatically.
 
-## Portainer
-Set `POSTGRES_PASSWORD` in the stack environment, deploy `docker-compose.yml`, then open port 8080.
+## Deployment
+The compose is prepared for Synology paths `/volume1/docker/gamevault/postgres` and `/volume1/docker/gamevault/data`. Set `POSTGRES_PASSWORD` in Portainer. After deployment click **Metadaten aktualisieren**. The first bulk run may take several minutes.
+
+## Data sources
+See `THIRD_PARTY_SOURCES.md`. Availability and completeness depend on upstream projects. No game/update packages are downloaded.
