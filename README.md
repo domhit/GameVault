@@ -9,3 +9,6 @@
 - Per-game provider, check timestamp and last error are stored in PostgreSQL.
 
 Deploy through GitHub Actions/GHCR as before. After recreation in Portainer, select **Cover aktualisieren**. Existing PostgreSQL data is migrated automatically.
+
+## v0.4.1 hotfix
+- Fixes `/api/games` 500 caused by missing SQLAlchemy `Game` mappings for `cover_provider`, `cover_checked_at`, and `cover_error`.

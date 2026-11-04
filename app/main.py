@@ -30,6 +30,9 @@ class Game(Base):
     current_value:Mapped[Optional[str]]=mapped_column(String(50),nullable=True)
     description:Mapped[Optional[str]]=mapped_column(Text,nullable=True)
     cover_source:Mapped[Optional[str]]=mapped_column(Text,nullable=True)
+    cover_provider:Mapped[Optional[str]]=mapped_column(String(120),nullable=True)
+    cover_checked_at:Mapped[Optional[str]]=mapped_column(String(50),nullable=True)
+    cover_error:Mapped[Optional[str]]=mapped_column(Text,nullable=True)
     pricecharting_url:Mapped[Optional[str]]=mapped_column(Text,nullable=True)
     packages:Mapped[list["Package"]]=relationship(back_populates="game",cascade="all,delete-orphan")
 class Package(Base):
