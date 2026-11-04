@@ -12,3 +12,8 @@ Deploy through GitHub Actions/GHCR as before. After recreation in Portainer, sel
 
 ## v0.4.1 hotfix
 - Fixes `/api/games` 500 caused by missing SQLAlchemy `Game` mappings for `cover_provider`, `cover_checked_at`, and `cover_error`.
+
+## v0.4.2 UI hotfix
+- Local cached covers under `/covers/...` are now rendered instead of being rejected by the old HTTP-only image check.
+- Restores platform accents: PS4 blue, PS3 red, PS2 gold, Xbox 360 green.
+- Keeps the independent library/detail scrolling behavior from v0.2.
