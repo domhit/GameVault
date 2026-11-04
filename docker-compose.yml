@@ -3,27 +3,36 @@ services:
     image: postgres:17-alpine
     container_name: gamevault-db
     restart: unless-stopped
+
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-gamevault}
-      POSTGRES_USER: ${POSTGRES_USER:-gamevault}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in Portainer}
+      POSTGRES_DB: gamevault
+      POSTGRES_USER: gamevault
+      POSTGRES_PASSWORD: DEIN_SICHERES_PASSWORT
+
     volumes:
-      - gamevault_db:/var/lib/postgresql/data
+      - /volume1/docker/gamevault/postgres:/var/lib/postgresql/data
+
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gamevault} -d ${POSTGRES_DB:-gamevault}"]
+      test: ["CMD-SHELL", "pg_isready -U gamevault -d gamevault"]
       interval: 10s
       timeout: 5s
       retries: 10
+
+
   gamevault:
     image: ghcr.io/domhit/gamevault:latest
     container_name: gamevault
     restart: unless-stopped
+
     depends_on:
       db:
         condition: service_healthy
+
     ports:
       - "8080:8080"
+
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-gamevault}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-gamevault}
-volumes:
-  gamevault_db:
+      DATABASE_URL: postgresql+psycopg://gamevault:DEIN_SICHERES_PASSWORT@db:5432/gamevault
+
+    volumes:
+      - /volume1/docker/gamevault/data:/data
