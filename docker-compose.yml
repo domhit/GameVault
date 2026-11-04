@@ -1,0 +1,11 @@
+services:
+  gamevault:
+    image: ghcr.io/domhit/gamevault:latest
+    container_name: gamevault
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      - DATABASE_URL=sqlite:////data/gamevault.db
