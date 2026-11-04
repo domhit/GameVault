@@ -1,9 +1,6 @@
-# Third-party data sources
-
-- SerialStation-derived PS4 title dataset via Axekinn/ps4-scraper (MIT project).
-- Sony PS4 update metadata summary via Axekinn/ps4-scraper. Only version metadata is consumed; GameVault contains no PKG downloader.
-- xenia-manager/x360db for Xbox 360 metadata and artwork.
-- xlenore/ps2-covers for PS2 covers.
-- st-alves/ps3-covers for PS3 covers.
-
-Artwork and game metadata remain property of their respective owners and are used for identification and personal archival cataloging. Review each upstream project's terms before redistributing cached artwork.
+# Third-party sources
+- Dinos17/FPKGi-Catalog-Hub: PS4 CUSA to cover URL mapping. GameVault does not use package download URLs.
+- gauss77/Multiman-Resources: primary PS3 cover source.
+- st-alves/ps3-covers: PS3 fallback.
+- xlenore/ps2-covers: PS2 serial-based covers.
+Artwork remains property of its respective owners. Review upstream terms before redistributing cached files.

@@ -1,20 +1,11 @@
-# GameVault v0.4.0
+# GameVault v0.4.1
 
-Self-hosted game collection, backup catalog and metadata monitor.
+## Cover-Provider-Kaskade
+- PS4: CUSA lookup in Dinos17/FPKGi-Catalog-Hub; only `cover_url` is consumed, never PKG links.
+- PS3: multiMAN Resources first, st-alves PS3 Covers as fallback. Serial variants with hyphen, underscore and compact form are tried.
+- PS2: xlenore/ps2-covers with normalized serial variants.
+- Covers are cached under `/volume1/docker/gamevault/data/covers`.
+- Existing covers are replaced only when the cascade finds a valid image larger than 1 KB.
+- Per-game provider, check timestamp and last error are stored in PostgreSQL.
 
-## Highlights
-- Bulk metadata refresh with PostgreSQL persistence.
-- PS4 TitleID backfill from linked packages.
-- PS4 title enrichment from the SerialStation-derived open dataset.
-- PS4 latest-known update comparison from the Sony update summary dataset. GameVault never downloads PKG files.
-- Xbox 360 metadata and artwork through x360db.
-- PS2 and PS3 serial-based community cover lookup, downloaded once to `/data/covers`.
-- Platform badges and colors: PS4 blue, PS3 red, PS2 gold, Xbox 360 green.
-- Update status filters and counters.
-- Existing v0.2 PostgreSQL database is migrated automatically.
-
-## Deployment
-The compose is prepared for Synology paths `/volume1/docker/gamevault/postgres` and `/volume1/docker/gamevault/data`. Set `POSTGRES_PASSWORD` in Portainer. After deployment click **Metadaten aktualisieren**. The first bulk run may take several minutes.
-
-## Data sources
-See `THIRD_PARTY_SOURCES.md`. Availability and completeness depend on upstream projects. No game/update packages are downloaded.
+Deploy through GitHub Actions/GHCR as before. After recreation in Portainer, select **Cover aktualisieren**. Existing PostgreSQL data is migrated automatically.
