@@ -1,19 +1,24 @@
-# GameVault v0.4.1
+# GameVault v0.5.0
 
-## Cover-Provider-Kaskade
-- PS4: CUSA lookup in Dinos17/FPKGi-Catalog-Hub; only `cover_url` is consumed, never PKG links.
-- PS3: multiMAN Resources first, st-alves PS3 Covers as fallback. Serial variants with hyphen, underscore and compact form are tried.
-- PS2: xlenore/ps2-covers with normalized serial variants.
-- Covers are cached under `/volume1/docker/gamevault/data/covers`.
-- Existing covers are replaced only when the cascade finds a valid image larger than 1 KB.
-- Per-game provider, check timestamp and last error are stored in PostgreSQL.
+## IGDB Metadata Resolver
+- Bulk enrichment for PS2, PS3, PS4 and Xbox 360.
+- Uses platform-filtered IGDB searches.
+- Exact/high-confidence matches at 94% or better are applied automatically.
+- Lower-confidence matches are marked `review` and can be inspected/accepted in the UI.
+- Enriches description, developer, publisher, genres, release date and cover.
+- Existing values are preserved. Confirmed IGDB matches are locked against automatic replacement.
+- Data-quality API: `/api/metadata/quality`.
+- Existing cover cascade and PS4 package import remain available.
 
-Deploy through GitHub Actions/GHCR as before. After recreation in Portainer, select **Cover aktualisieren**. Existing PostgreSQL data is migrated automatically.
+## Portainer configuration
+Create a Twitch developer application and set these stack environment variables without committing them to Git:
 
-## v0.4.1 hotfix
-- Fixes `/api/games` 500 caused by missing SQLAlchemy `Game` mappings for `cover_provider`, `cover_checked_at`, and `cover_error`.
+```text
+IGDB_CLIENT_ID=<Twitch application client ID>
+IGDB_CLIENT_SECRET=<Twitch application client secret>
+```
 
-## v0.4.2 UI hotfix
-- Local cached covers under `/covers/...` are now rendered instead of being rejected by the old HTTP-only image check.
-- Restores platform accents: PS4 blue, PS3 red, PS2 gold, Xbox 360 green.
-- Keeps the independent library/detail scrolling behavior from v0.2.
+The compose passes them into GameVault. Restart/recreate the container, then use **IGDB aktualisieren**.
+
+## Safety
+GameVault never downloads game packages. IGDB images are cached in `/volume1/docker/gamevault/data/covers`. Existing PostgreSQL data is migrated automatically.

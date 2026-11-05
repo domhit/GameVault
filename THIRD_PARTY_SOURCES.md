@@ -1,6 +1,6 @@
 # Third-party sources
-- Dinos17/FPKGi-Catalog-Hub: PS4 CUSA to cover URL mapping. GameVault does not use package download URLs.
-- gauss77/Multiman-Resources: primary PS3 cover source.
-- st-alves/ps3-covers: PS3 fallback.
-- xlenore/ps2-covers: PS2 serial-based covers.
-Artwork remains property of its respective owners. Review upstream terms before redistributing cached files.
+- IGDB API by Twitch: metadata and cover fallback. Requires Client ID and Client Secret. Follow IGDB attribution and API terms.
+- Dinos17/FPKGi-Catalog-Hub: PS4 CUSA to cover URL mapping only. Package URLs are not used.
+- gauss77/Multiman-Resources and st-alves/ps3-covers: PS3 covers.
+- xlenore/ps2-covers: PS2 covers.
+Artwork and metadata remain property of their respective owners.

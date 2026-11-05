@@ -34,6 +34,8 @@ services:
     environment:
       DATA_DIR: /data
       METADATA_TIMEOUT: 20
+      IGDB_CLIENT_ID: ${IGDB_CLIENT_ID:-}
+      IGDB_CLIENT_SECRET: ${IGDB_CLIENT_SECRET:-}
       DATABASE_URL: postgresql+psycopg://gamevault:DEIN_SICHERES_PASSWORT@db:5432/gamevault
 
     volumes:
