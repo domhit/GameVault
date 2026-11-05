@@ -1,12 +1,24 @@
-# GameVault v0.6.1
+# GameVault v0.5.0
 
-## Metadata editor and resolver UX
-- Full metadata editor modal for title, identifier type, TitleID/serial, IGDB ID, publisher, developer, genre, release date, value and description.
-- Manual TitleID/serial input is normalized and persisted.
-- Direct numeric IGDB ID assignment supported from the editor and IGDB search dialog.
-- IGDB search is now a real result dialog with cover previews, match confidence and explicit **Übernehmen** actions.
-- `ID / IGDB auflösen` now displays a trace: identifier, PS4 CUSA resolution, IGDB search, best match and application result.
-- Busy spinners are shown for editor save, IGDB search/accept and ID resolver operations.
-- Existing PostgreSQL database is migrated automatically. No re-import required.
+## IGDB Metadata Resolver
+- Bulk enrichment for PS2, PS3, PS4 and Xbox 360.
+- Uses platform-filtered IGDB searches.
+- Exact/high-confidence matches at 94% or better are applied automatically.
+- Lower-confidence matches are marked `review` and can be inspected/accepted in the UI.
+- Enriches description, developer, publisher, genres, release date and cover.
+- Existing values are preserved. Confirmed IGDB matches are locked against automatic replacement.
+- Data-quality API: `/api/metadata/quality`.
+- Existing cover cascade and PS4 package import remain available.
 
-Keep `IGDB_CLIENT_ID` and `IGDB_CLIENT_SECRET` configured in Portainer.
+## Portainer configuration
+Create a Twitch developer application and set these stack environment variables without committing them to Git:
+
+```text
+IGDB_CLIENT_ID=<Twitch application client ID>
+IGDB_CLIENT_SECRET=<Twitch application client secret>
+```
+
+The compose passes them into GameVault. Restart/recreate the container, then use **IGDB aktualisieren**.
+
+## Safety
+GameVault never downloads game packages. IGDB images are cached in `/volume1/docker/gamevault/data/covers`. Existing PostgreSQL data is migrated automatically.
