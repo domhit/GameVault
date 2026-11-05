@@ -1,13 +1,18 @@
-# GameVault v0.6.3
+# GameVault v0.6.4
 
-## v0.6 completion
-- Manual **IGDB übernehmen** now overrides `metadata_locked`. The lock still protects records from unattended bulk updates.
-- Manual TitleID/Serial is never removed by IGDB.
-- IGDB responses now include game modes, perspectives, themes, franchises, engines and multiplayer-mode information.
-- Detail view shows the extended metadata.
-- Filters added: Cover fehlt, TitleID/Serial fehlt, Local Multiplayer, Local Co-op, Online Multiplayer.
-- PS4 duplicate candidate API and package-preserving merge endpoint added.
-- Global bottom-right activity indicator for IGDB search, IGDB apply and ID resolver actions.
-- Manual IGDB apply reports which fields actually changed.
+## All covers local
+GameVault now treats a cover as valid only when it is cached locally under `/covers/...`, backed by `/volume1/docker/gamevault/data/covers`.
 
-Existing PostgreSQL data is migrated automatically. No re-import is required.
+- The UI no longer requests old Game Collector paths or external cover URLs directly.
+- New **Cover lokal speichern** action migrates the collection:
+  1. keep existing local covers;
+  2. download an existing valid remote cover URL locally;
+  3. clear unusable legacy Game Collector paths;
+  4. try the PS4/PS3/PS2 provider cascade;
+  5. fall back to IGDB, first by known IGDB ID and then by title + platform.
+- `Cover fehlt` and metadata quality now count only genuinely local covers.
+- New endpoint: `POST /api/covers/localize`.
+- IGDB/manual apply also replaces non-local legacy covers with a local IGDB image.
+
+Persistent location: `/volume1/docker/gamevault/data/covers`.
+No re-import and no database reset is required.
