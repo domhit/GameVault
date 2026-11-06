@@ -1,22 +1,19 @@
-# GameVault v1.1.0-dev1
+# GameVault v1.1.0-dev2
 
-First Console Inventory development build.
+Second PS3 Console Inventory development build, refined against a real Rebug/webMAN inventory.
 
-## PlayStation 3 provider
-- New **Meine Konsolen** page.
-- Configure PS3 name, host/IP, FTP port and optional credentials.
-- Optional webMAN MOD URL.
-- Read-only FTP connection test and inventory scan.
-- PARAM.SFO parser for TITLE, TITLE_ID, APP_VER/VERSION, CATEGORY and CONTENT_ID.
-- Scans `/dev_hdd0/game`, `/dev_hdd0/GAMES`, `/dev_hdd0/GAMEZ` and `/dev_hdd0/PS3ISO`.
-- Distinguishes playable HDD games from Game Data/Patch/DLC through CATEGORY.
-- Optional webMAN adapter reads `index.ps3` and `games.ps3` as an enrichment source for ISO/JB paths.
-- Persists scan results in `installed_games` and matches by PS3 identifier first, exact normalized title second.
-- Shows matched and unknown installed content.
+## Improvements
+- webMAN duplicates are collapsed by PS3 TitleID.
+- `/mount.ps3/...` control links are normalized to their actual storage paths.
+- `UNMOUNT GAME` and other control links are ignored.
+- Human-readable webMAN display titles are preferred over ISO filenames.
+- Storage is normalized to Internal HDD, network slots and USB devices.
+- Library games now receive `installed_on` data.
+- Library cards and detail pages show PS3 availability, path, storage, source and scan date.
+- Filters: `Auf PS3 verfügbar` and `Nicht auf PS3 verfügbar`.
+- Unknown installed titles receive fuzzy same-platform library suggestions.
+- Confirmed matches can write a missing PS3 Serial into the library record.
+- Manual matches are persisted until the next full scan; dev3 will preserve overrides across rescans.
 
-## Dev1 scope and limitations
-- Strictly read-only toward the PS3.
-- ISO entries without webMAN may have title/path but no reliable version.
-- USB/NTFS/network enumeration is primarily delegated to webMAN in this first build.
-- FTP password is stored in PostgreSQL in dev1; anonymous FTP or a dedicated read-only credential is recommended.
-- Real Rebug/webMAN scan results will be used to refine dev2.
+## Version limitation
+webMAN list pages do not consistently expose APP_VER for ISO entries. dev2 keeps the version when present and leaves it empty otherwise; it does not guess from filenames.

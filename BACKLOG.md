@@ -53,3 +53,9 @@ Target state in GameVault: owned, backup available/location, installed console(s
 - Add manual match/unmatch for unknown installed titles.
 - Add library filters `Auf PS3 installiert` and `Nicht auf PS3 installiert`.
 - Decide on credential encryption/secret handling before stable v1.1.0.
+
+## v1.1 dev3
+- Preserve manual install matches across rescans instead of rebuilding them.
+- Investigate webMAN endpoints or SFO extraction for ISO APP_VER.
+- Add edit-console UI and credential protection.
+- Add installed-version comparison where a reliable online PS3 update source is available.
