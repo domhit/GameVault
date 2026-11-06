@@ -1,11 +1,12 @@
-# GameVault v0.7.0
+# GameVault v0.7.1
 
-## UI & metadata quality
-- Mobile-safe custom dialogs replace native browser alert/confirm/prompt flows in primary actions.
-- Responsive header, editor and dialog layout for phone/tablet.
-- Metadata quality uses critical vs optional fields instead of an all-or-nothing flag.
-- Field cards expose state by color: red critical missing, yellow optional missing, orange manual/protected, blue provider/IGDB populated.
-- Full metadata editor includes IGDB ID, identifiers, catalog fields, extended IGDB fields, collection fields, PriceCharting URL and manual cover URL.
-- Manual remote cover URLs are downloaded into `/data/covers`; the UI remains local-cover-only.
-- PriceCharting URL from Game Collector import is visible on the detail page.
-- `BACKLOG.md` records cross-platform game grouping and modded-console installed-game inventory.
+## Metadata editor viewport fix
+- The metadata editor is now a three-part layout: fixed header, independently scrollable form body, fixed footer.
+- Save/Cancel remain visible at 1920x1080 and other short desktop viewports.
+- Uses `100dvh` with `100vh` fallback for iPad/iPhone browser chrome behavior.
+- The form uses momentum touch scrolling on iOS (`-webkit-overflow-scrolling: touch`) and `touch-action: pan-y`.
+- On phones the editor becomes a full-screen, one-column sheet with safe-area-aware footer buttons.
+- On desktop/tablet the editor stays two-column where space permits.
+- Background scrolling is locked while the editor is open.
+
+All v0.7.0 metadata-quality, mobile-dialog, PriceCharting, local-cover, IGDB and backlog functionality is preserved.
