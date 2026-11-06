@@ -65,3 +65,10 @@ Target state in GameVault: owned, backup available/location, installed console(s
 - Platform identifier is authoritative and duplicate-protected.
 - Console-created games are linked immediately and enriched through IGDB.
 - Reuse this workflow for Switch, Wii U, 3DS, Aurora and later providers.
+
+## v1.2 Aurora dev2 validation
+- Validate actual Aurora installation path and content.db schema.
+- Refine TitleID/title/path extraction from the real database.
+- Read Aurora settings.db scan paths.
+- Add x360db enrichment before IGDB.
+- Evaluate installed DLC and Title Update inventory.

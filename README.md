@@ -1,22 +1,19 @@
-# GameVault v1.1.0-dev4
+# GameVault v1.2.0-dev1
 
-Fourth PS3 Console Inventory development build.
+First Xbox 360 / Aurora Console Inventory development build.
 
-## Console-driven library import
-Unknown PS3 inventory entries now offer:
+## Aurora provider
+- Add Xbox 360 consoles from **Meine Konsolen**.
+- Aurora FTP defaults: port 21, `xboxftp` / `xboxftp`.
+- Optional NOVA endpoint defaults to port 9999 with `xboxhttp` credentials.
+- Connection test checks FTP and NOVA independently.
+- Read-only FTP discovery searches common Aurora database locations.
+- Downloads and introspects Aurora `content.db` locally with SQLite.
+- Extracts title, eight-character hexadecimal TitleID, path/storage and version when present.
+- Deduplicates discovered content by TitleID.
+- Reuses GameVault's installed-game matching and console-driven create-game workflow.
 
-- **Vorhandenem Spiel zuordnen** when fuzzy PS3-library suggestions exist.
-- **Als neues Spiel übernehmen** even when no suggestion exists.
+## Diagnostic-first dev build
+Aurora database schemas vary by installation/version. The scan response includes discovered database paths, table/column schemas, rows examined and errors. A real Aurora scan will be used to refine dev2 without guessing the exact schema.
 
-Creating from the console scan:
-
-1. validates the PS3 Serial;
-2. prevents duplicates when the Serial already exists;
-3. creates a PlayStation 3 library game with `SERIAL` and `console_scan` provenance;
-4. links the installed inventory row immediately;
-5. detects ISO format from the source path/type;
-6. searches IGDB for PlayStation 3;
-7. applies an unambiguous match, including local cover download;
-8. otherwise stores the best result for manual IGDB review.
-
-This establishes the reusable pattern for future Nintendo and other console providers where no prior collection list exists.
+PS3 FTP/webMAN support from v1.1 remains available.
