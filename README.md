@@ -1,13 +1,11 @@
-# GameVault v0.7.2
+# GameVault v0.7.3
 
-## Data quality & duplicate cleanup
-- New **Datenqualität** view lists critical/optional metadata gaps, missing identifiers, missing local covers and review cases.
-- New **Duplikate** view finds high-confidence same-platform duplicates.
-- PS4 duplicate matching uses matching TitleID first, IGDB ID and normalized title as additional signals.
-- Merge preview shows preferred keep/merge records and conflicting fields.
-- Merge keeps the preferred record (Game Collector is preferred), moves all packages, inherits only missing fields and removes the duplicate.
-- Existing collection value/completion data is protected by target-wins conflict handling.
-- The v0.7.1 responsive editor and mobile behavior are preserved.
+## Dialog UX consolidation
+- IGDB result search now uses a fixed header, independently scrollable result list, and fixed footer.
+- Direct IGDB ID, `ID laden`, and `Schließen` remain reachable even with many search results.
+- Data Quality and Duplicate dialogs use the same fixed-header / scroll-body / fixed-footer layout.
+- Mobile/iPad dialogs use `100dvh`, iOS momentum scrolling, safe-area-aware footers and touch-friendly controls.
+- Duplicate merge no longer re-runs analysis after every merge. The merged candidate card is removed locally and the remaining count updates immediately.
+- Duplicate dialog now provides **Neu analysieren** for an explicit fresh scan.
 
-## Backlog
-Priority B adds PS4 **Update verfügbar**: compare latest known CUSA update against archived patch packages, with `Aktuell`, `Update verfügbar`, and `Unbekannt`. No PKG downloading.
+All v0.7.2 metadata, merge, quality, editor, local-cover and backlog functionality is preserved.
