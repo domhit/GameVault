@@ -1,7 +1,9 @@
 name: Build container
 on:
   push:
-    branches: [main]
+    branches: 
+      - main
+      - develop-v1.1
     tags: ['v*']
   workflow_dispatch:
 permissions:
@@ -23,9 +25,10 @@ jobs:
         with:
           images: ghcr.io/domhit/gamevault
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=tag
-            type=sha
+             type=raw,value=latest,enable={{is_default_branch}}
+             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop-v1.1' }}
+             type=ref,event=tag
+             type=sha
       - uses: docker/build-push-action@v6
         with:
           context: .
