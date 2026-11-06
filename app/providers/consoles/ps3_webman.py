@@ -38,7 +38,7 @@ def clean_title(label,path):
 class PS3WebManProvider(ConsoleProvider):
     provider_name='ps3_webman'
     def __init__(self,base_url,timeout=15):
-        self.base_url=(base_url or '').rstrip('/')+'/';self.timeout=int(timeout or 15);self.headers={'User-Agent':'GameVault/1.1.0-dev2'}
+        self.base_url=(base_url or '').rstrip('/')+'/';self.timeout=int(timeout or 15);self.headers={'User-Agent':'GameVault/1.1.0-dev3'}
     def health(self):
         try:
             r=requests.get(urljoin(self.base_url,'index.ps3'),headers=self.headers,timeout=self.timeout)
