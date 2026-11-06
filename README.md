@@ -1,11 +1,18 @@
-# GameVault v0.6.5
+# GameVault v0.6.6
 
-## Endpoint hotfix
-The v0.6.4 frontend referenced two routes that had been lost during the v0.6 merge. Both are restored and validated:
+## Deterministic metadata merge
+- The global `metadata_locked` flag is deprecated and no longer blocks enrichment.
+- Per-field provenance is stored in `metadata_sources`.
+- Manual editor changes are marked `manual` and remain protected.
+- IGDB refreshes IGDB-managed fields, extended fields, multiplayer data, and local IGDB covers.
+- Collection-specific fields remain untouched: TitleID/Serial, value, completion state, collection status, completeness and packages.
 
-- `PUT /api/games/{game_id}/metadata` for the full metadata editor.
-- `POST /api/games/{game_id}/igdb-direct/{igdb_id}` for direct IGDB assignment and the **Übernehmen** action.
+## Global IGDB update
+The top-level **IGDB aktualisieren** action now follows the same resolver order as the detail action:
+1. known IGDB ID;
+2. PS4 CUSA to title resolution;
+3. title plus platform IGDB search;
+4. full IGDB record by ID;
+5. apply standard and extended metadata.
 
-Manual IGDB assignment uses `force=True`, so a deliberate user action overrides `metadata_locked`; unattended bulk enrichment still respects locks. Manual TitleID/Serial values are preserved.
-
-The local-cover policy from v0.6.4 remains unchanged: UI covers are served only from `/covers/...`, physically stored under `/volume1/docker/gamevault/data/covers`.
+A global busy indicator remains visible during the request. The final report includes checked, resolved by ID/title, applied, review, not found, errors and changed-field counts.
