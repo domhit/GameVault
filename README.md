@@ -1,11 +1,12 @@
-# GameVault v0.7.3
+# GameVault v0.7.4
 
-## Dialog UX consolidation
-- IGDB result search now uses a fixed header, independently scrollable result list, and fixed footer.
-- Direct IGDB ID, `ID laden`, and `Schließen` remain reachable even with many search results.
-- Data Quality and Duplicate dialogs use the same fixed-header / scroll-body / fixed-footer layout.
-- Mobile/iPad dialogs use `100dvh`, iOS momentum scrolling, safe-area-aware footers and touch-friendly controls.
-- Duplicate merge no longer re-runs analysis after every merge. The merged candidate card is removed locally and the remaining count updates immediately.
-- Duplicate dialog now provides **Neu analysieren** for an explicit fresh scan.
+## Duplicate review improvements
+- Every duplicate candidate can be expanded into a compact side-by-side comparison.
+- Comparison includes cover, title, platform, TitleID/Serial, IGDB ID, release, publisher, developer, genre, franchise, value, completion status and package count.
+- New **Kein Duplikat** action persists the pair in PostgreSQL and removes it from all future duplicate scans.
+- Exclusions use canonical game-ID pairs, so pair order does not matter.
+- Different populated IGDB IDs are now strong evidence against a duplicate and suppress false positives such as different entries from the same series.
+- Different release years reduce fuzzy-title confidence.
+- Merge removes stale exclusions involving the deleted record.
 
-All v0.7.2 metadata, merge, quality, editor, local-cover and backlog functionality is preserved.
+All v0.7.3 scrolling, metadata, quality, cover and merge behavior remains available.
