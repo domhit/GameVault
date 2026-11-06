@@ -1,18 +1,11 @@
-# GameVault v0.6.6
+# GameVault v0.7.0
 
-## Deterministic metadata merge
-- The global `metadata_locked` flag is deprecated and no longer blocks enrichment.
-- Per-field provenance is stored in `metadata_sources`.
-- Manual editor changes are marked `manual` and remain protected.
-- IGDB refreshes IGDB-managed fields, extended fields, multiplayer data, and local IGDB covers.
-- Collection-specific fields remain untouched: TitleID/Serial, value, completion state, collection status, completeness and packages.
-
-## Global IGDB update
-The top-level **IGDB aktualisieren** action now follows the same resolver order as the detail action:
-1. known IGDB ID;
-2. PS4 CUSA to title resolution;
-3. title plus platform IGDB search;
-4. full IGDB record by ID;
-5. apply standard and extended metadata.
-
-A global busy indicator remains visible during the request. The final report includes checked, resolved by ID/title, applied, review, not found, errors and changed-field counts.
+## UI & metadata quality
+- Mobile-safe custom dialogs replace native browser alert/confirm/prompt flows in primary actions.
+- Responsive header, editor and dialog layout for phone/tablet.
+- Metadata quality uses critical vs optional fields instead of an all-or-nothing flag.
+- Field cards expose state by color: red critical missing, yellow optional missing, orange manual/protected, blue provider/IGDB populated.
+- Full metadata editor includes IGDB ID, identifiers, catalog fields, extended IGDB fields, collection fields, PriceCharting URL and manual cover URL.
+- Manual remote cover URLs are downloaded into `/data/covers`; the UI remains local-cover-only.
+- PriceCharting URL from Game Collector import is visible on the detail page.
+- `BACKLOG.md` records cross-platform game grouping and modded-console installed-game inventory.
