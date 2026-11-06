@@ -175,3 +175,9 @@ See [BACKLOG.md](BACKLOG.md) for further ideas.
 ## Third-party data
 
 See [THIRD_PARTY_SOURCES.md](THIRD_PARTY_SOURCES.md). External metadata and artwork remain subject to their respective providers' terms.
+
+## License
+
+GameVault source code is licensed under the [Apache License 2.0](LICENSE).
+
+Game metadata, cover artwork, trademarks, logos and data retrieved from third-party providers are not relicensed by GameVault. They remain subject to the rights, licenses and terms of their respective owners and providers. See [THIRD_PARTY_SOURCES.md](THIRD_PARTY_SOURCES.md).
