@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Local runtime data
+data/
+postgres/
+*.db
+*.sqlite*
+
+# Build/test artifacts
+ui*.js
+ui_*.js
+*.zip
+*.zip.txt
+*.tar
+*.tar.gz
+*.log
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

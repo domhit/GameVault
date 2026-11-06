@@ -37,3 +37,11 @@ Target state in GameVault: owned, backup available/location, installed console(s
 - Saved filters and tag manager/bulk tagging.
 - Backup and restore bundle: PostgreSQL dump, local covers, JSON/CSV exports, configuration without secrets.
 - Console-provider adapters for installed-game inventory remain the differentiating priority after the data model is ready.
+
+
+## v1.1 - Console Inventory
+- Common ConsoleProvider abstraction.
+- PlayStation 3 / Rebug first.
+- Read-only FTP baseline with PARAM.SFO parsing.
+- Optional webMAN MOD enrichment for additional ISO/JB/network paths.
+- Match installed TitleID/version against GameVault.
