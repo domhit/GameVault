@@ -1,8 +1,22 @@
-# GameVault v1.1.0-dev3
+# GameVault v1.1.0-dev4
 
-- PS3 scan TitleIDs are automatically written as missing library Serials for unique exact/manual matches.
-- Manual installed-game matches survive rescans.
-- webMAN mount links remain canonicalized; `/mount.ps3` is never stored.
-- XLSX decimal parsing correctly handles numeric values, German/international decimal formats and no longer removes decimal points from `35.697`.
-- **Größenprüfung** lists packages above 500 GB and offers individual divide-by-1000 correction after review.
-- Existing values are never silently rewritten.
+Fourth PS3 Console Inventory development build.
+
+## Console-driven library import
+Unknown PS3 inventory entries now offer:
+
+- **Vorhandenem Spiel zuordnen** when fuzzy PS3-library suggestions exist.
+- **Als neues Spiel übernehmen** even when no suggestion exists.
+
+Creating from the console scan:
+
+1. validates the PS3 Serial;
+2. prevents duplicates when the Serial already exists;
+3. creates a PlayStation 3 library game with `SERIAL` and `console_scan` provenance;
+4. links the installed inventory row immediately;
+5. detects ISO format from the source path/type;
+6. searches IGDB for PlayStation 3;
+7. applies an unambiguous match, including local cover download;
+8. otherwise stores the best result for manual IGDB review.
+
+This establishes the reusable pattern for future Nintendo and other console providers where no prior collection list exists.

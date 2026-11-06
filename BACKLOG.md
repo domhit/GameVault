@@ -59,3 +59,9 @@ Target state in GameVault: owned, backup available/location, installed console(s
 - Investigate webMAN endpoints or SFO extraction for ISO APP_VER.
 - Add edit-console UI and credential protection.
 - Add installed-version comparison where a reliable online PS3 update source is available.
+
+## Console import pattern established in dev4
+- Unknown console inventory can create library games.
+- Platform identifier is authoritative and duplicate-protected.
+- Console-created games are linked immediately and enriched through IGDB.
+- Reuse this workflow for Switch, Wii U, 3DS, Aurora and later providers.
