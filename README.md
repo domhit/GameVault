@@ -1,12 +1,14 @@
-# GameVault v0.7.4
+# GameVault v0.8.0
 
-## Duplicate review improvements
-- Every duplicate candidate can be expanded into a compact side-by-side comparison.
-- Comparison includes cover, title, platform, TitleID/Serial, IGDB ID, release, publisher, developer, genre, franchise, value, completion status and package count.
-- New **Kein Duplikat** action persists the pair in PostgreSQL and removes it from all future duplicate scans.
-- Exclusions use canonical game-ID pairs, so pair order does not matter.
-- Different populated IGDB IDs are now strong evidence against a duplicate and suppress false positives such as different entries from the same series.
-- Different release years reduce fuzzy-title confidence.
-- Merge removes stale exclusions involving the deleted record.
+## Add games directly
+The library no longer depends on Game Collector/XML for new titles. Use **+ Spiel** in the header, enter title, platform and optionally TitleID/Serial, then enrich via IGDB or edit metadata manually. Existing XML/XLSX imports remain available for bulk import.
 
-All v0.7.3 scrolling, metadata, quality, cover and merge behavior remains available.
+## PS4 update availability
+- **PS4 Updates** refreshes latest-known PS4 update metadata by CUSA using the existing update-summary provider.
+- GameVault compares that version against the highest archived Package whose category is Patch/Update.
+- Statuses: `Aktuell`, `Update verfügbar`, `Unbekannt`.
+- List filter: **Update verfügbar**.
+- Detail view shows local patch, online-current version and status.
+- Information only. GameVault does not download PKG files.
+
+All v0.7.4 duplicate exclusions/comparison, metadata quality, local cover handling and responsive dialogs remain.

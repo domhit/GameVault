@@ -27,3 +27,7 @@ Target state in GameVault: owned, backup available/location, installed console(s
 - Statuses: `Aktuell`, `Update verfügbar`, `Unbekannt`.
 - Add list filter and detail badge.
 - Information only: never download game/update PKG files.
+
+## Implemented in v0.8.0
+- Manual creation of new games from the web UI (`+ Spiel`), followed by IGDB enrichment/editor maintenance.
+- PS4 update availability: refresh latest-known version by CUSA, compare with highest archived local patch, show status and filter.
