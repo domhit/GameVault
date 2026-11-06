@@ -19,3 +19,11 @@ Known environment to investigate in a later release:
 - Nintendo 3DS: jailbreak/CFW
 
 Target state in GameVault: owned, backup available/location, installed console(s), installed version where obtainable, latest known update, completion and multiplayer metadata.
+
+## Priority B - Update availability
+- Restore the PS4 `Update verfügbar` feature.
+- Resolve latest known PS4 update by CUSA (Sony/OrbisPatches-compatible metadata source).
+- Compare latest remote version with the highest archived Patch/Update package in GameVault.
+- Statuses: `Aktuell`, `Update verfügbar`, `Unbekannt`.
+- Add list filter and detail badge.
+- Information only: never download game/update PKG files.

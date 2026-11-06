@@ -1,12 +1,13 @@
-# GameVault v0.7.1
+# GameVault v0.7.2
 
-## Metadata editor viewport fix
-- The metadata editor is now a three-part layout: fixed header, independently scrollable form body, fixed footer.
-- Save/Cancel remain visible at 1920x1080 and other short desktop viewports.
-- Uses `100dvh` with `100vh` fallback for iPad/iPhone browser chrome behavior.
-- The form uses momentum touch scrolling on iOS (`-webkit-overflow-scrolling: touch`) and `touch-action: pan-y`.
-- On phones the editor becomes a full-screen, one-column sheet with safe-area-aware footer buttons.
-- On desktop/tablet the editor stays two-column where space permits.
-- Background scrolling is locked while the editor is open.
+## Data quality & duplicate cleanup
+- New **Datenqualität** view lists critical/optional metadata gaps, missing identifiers, missing local covers and review cases.
+- New **Duplikate** view finds high-confidence same-platform duplicates.
+- PS4 duplicate matching uses matching TitleID first, IGDB ID and normalized title as additional signals.
+- Merge preview shows preferred keep/merge records and conflicting fields.
+- Merge keeps the preferred record (Game Collector is preferred), moves all packages, inherits only missing fields and removes the duplicate.
+- Existing collection value/completion data is protected by target-wins conflict handling.
+- The v0.7.1 responsive editor and mobile behavior are preserved.
 
-All v0.7.0 metadata-quality, mobile-dialog, PriceCharting, local-cover, IGDB and backlog functionality is preserved.
+## Backlog
+Priority B adds PS4 **Update verfügbar**: compare latest known CUSA update against archived patch packages, with `Aktuell`, `Update verfügbar`, and `Unbekannt`. No PKG downloading.
