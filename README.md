@@ -1,14 +1,15 @@
-# GameVault v0.8.0
+# GameVault v0.9.0
 
-## Add games directly
-The library no longer depends on Game Collector/XML for new titles. Use **+ Spiel** in the header, enter title, platform and optionally TitleID/Serial, then enrich via IGDB or edit metadata manually. Existing XML/XLSX imports remain available for bulk import.
+## Providers, resolvers and editions
+- New **Quellen & Resolver** page with live status for IGDB, PS4 catalog, ORBISPatches, PS4 update summary, local covers and library totals.
+- ORBISPatches provider resolves CUSA pages and reads the latest patch through its internal `loadpatches` endpoint. It is a modular fallback because this is not a guaranteed public API.
+- **Alle Resolver ausführen** runs PS4 catalog, ORBISPatches and IGDB in order and presents a trace.
+- PS4 update refresh uses the update summary first and ORBISPatches as fallback.
+- Resolver events are cached per game (last 30 events).
 
-## PS4 update availability
-- **PS4 Updates** refreshes latest-known PS4 update metadata by CUSA using the existing update-summary provider.
-- GameVault compares that version against the highest archived Package whose category is Patch/Update.
-- Statuses: `Aktuell`, `Update verfügbar`, `Unbekannt`.
-- List filter: **Update verfügbar**.
-- Detail view shows local patch, online-current version and status.
-- Information only. GameVault does not download PKG files.
+## Collection editions
+Games now support region, media format, edition, storefront, tags and notes. The add-game dialog and full editor expose these fields.
 
-All v0.7.4 duplicate exclusions/comparison, metadata quality, local cover handling and responsive dialogs remain.
+## Operations
+- JSON library export endpoint: `/api/export/games.json`.
+- Existing local covers, IGDB, updates, duplicate exclusions and responsive UI remain.

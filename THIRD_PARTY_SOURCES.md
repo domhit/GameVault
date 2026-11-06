@@ -4,3 +4,4 @@
 - gauss77/Multiman-Resources and st-alves/ps3-covers: PS3 covers.
 - xlenore/ps2-covers: PS2 covers.
 Artwork and metadata remain property of their respective owners.
+- ORBISPatches: CUSA title/patch fallback via website page and internal loadpatches endpoint. This is an unofficial, potentially unstable integration; GameVault keeps other providers as fallbacks.

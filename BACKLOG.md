@@ -31,3 +31,9 @@ Target state in GameVault: owned, backup available/location, installed console(s
 ## Implemented in v0.8.0
 - Manual creation of new games from the web UI (`+ Spiel`), followed by IGDB enrichment/editor maintenance.
 - PS4 update availability: refresh latest-known version by CUSA, compare with highest archived local patch, show status and filter.
+
+## v1.0 candidates inspired by VideoGameTrackarr
+- Logical game identity with platform editions.
+- Saved filters and tag manager/bulk tagging.
+- Backup and restore bundle: PostgreSQL dump, local covers, JSON/CSV exports, configuration without secrets.
+- Console-provider adapters for installed-game inventory remain the differentiating priority after the data model is ready.
