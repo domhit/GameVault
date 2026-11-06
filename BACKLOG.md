@@ -45,3 +45,11 @@ Target state in GameVault: owned, backup available/location, installed console(s
 - Read-only FTP baseline with PARAM.SFO parsing.
 - Optional webMAN MOD enrichment for additional ISO/JB/network paths.
 - Match installed TitleID/version against GameVault.
+
+## v1.1 dev2 validation
+- Validate real Rebug FTP directory behavior and FTP server compatibility.
+- Refine CATEGORY classification from real PARAM.SFO samples.
+- Improve webMAN HTML/list parsing against the installed webMAN MOD version.
+- Add manual match/unmatch for unknown installed titles.
+- Add library filters `Auf PS3 installiert` and `Nicht auf PS3 installiert`.
+- Decide on credential encryption/secret handling before stable v1.1.0.
