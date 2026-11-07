@@ -1,18 +1,19 @@
-# GameVault v1.2.0-dev4
+# GameVault v1.2.0-dev5
 
-## Manual console-to-library matching
-- Unknown Xbox 360 and PS3 inventory entries now offer **Vorhandenes Spiel suchen**.
-- Search is restricted to the correct platform and supports title or TitleID/Serial substrings.
-- The search dialog can hide games already linked to console inventory.
-- Manual matching links the installed row and copies a missing Xbox TitleID or PS3 Serial with `console_scan` provenance.
-- The confirmation dialog is platform-aware and no longer mentions PS3 for Xbox matches.
+## Correct wrong console assignments
+- Assigned game rows now provide **Zuordnung lösen**.
+- Unmatching removes the inventory link immediately.
+- A TitleID/Serial copied from that console row is removed only when its metadata source is `console_scan` and it still equals the scanned identifier.
+- Manually maintained identifiers are preserved.
 
-## Inventory review filters
-- Installed content defaults to **Unbekannt**.
-- Status filters: Unbekannt, Alle, Zugeordnet.
-- Type filter is generated from the scanned inventory, including Xbox 360 Game, XBLA, Xbox Classic and Title Update.
-- Live counters show all, unknown and matched entries.
+## Xbox Classic platform
+- Aurora `ContentGroup 4` is stored as platform **Xbox Classic**, not Xbox 360.
+- Xbox Classic uses `TITLEID`, its own library search scope, filters and IGDB platform mapping.
+- Console-created Xbox Classic titles remain linked to the physical Xbox 360 console while correctly appearing as Xbox Classic games in the library.
 
-## Suggestions
-- Automatic suggestions also consider safe title containment, so `DiRT` can suggest `ColinMcRae: Dirt`.
-- Containment is suggestion-only and never triggers automatic assignment.
+## Nested TU/DLC presentation
+- Xbox 360 Game, XBLA and Xbox Classic entries are parent rows.
+- Title Updates and future DLC rows are nested under the parent game by linked GameVault game or TitleID.
+- Parent counters exclude TU/DLC; a separate child-content count is shown.
+- Selecting the Title Update or DLC type still provides a direct child-only view.
+- TU/DLC rows never offer `Als neues Spiel übernehmen`.

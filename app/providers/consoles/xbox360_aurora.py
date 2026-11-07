@@ -70,7 +70,7 @@ class AuroraProvider(ConsoleProvider):
        if not tid or not title:continue
        k=(tid,kind);path=str(r['Directory'] or '')
        if k not in games:
-        games[k]={'platform':'Xbox 360','identifier':tid,'title':title,'installed_version':version_text(r['BaseVersion']),'content_type':kind,'source':'Aurora ContentItems','path':path,'content_id':tid_hex(r['MediaId']),'category':kind,'storage':self._storage(path),'paths':[path] if path else []}
+        games[k]={'platform':'Xbox Classic' if kind=='Xbox Classic' else 'Xbox 360','identifier':tid,'title':title,'installed_version':version_text(r['BaseVersion']),'content_type':kind,'source':'Aurora ContentItems','path':path,'content_id':tid_hex(r['MediaId']),'category':kind,'storage':self._storage(path),'paths':[path] if path else []}
        elif path and path not in games[k]['paths']:games[k]['paths'].append(path)
       for g in games.values():
        if len(g['paths'])>1:g['path']=' | '.join(g['paths'])

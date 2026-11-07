@@ -7,7 +7,7 @@ CLIENT_SECRET=os.getenv('IGDB_CLIENT_SECRET','')
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
 TOKEN_URL='https://id.twitch.tv/oauth2/token'
 API='https://api.igdb.com/v4'
-PLATFORMS={'PlayStation 2':8,'PlayStation 3':9,'PlayStation 4':48,'Xbox 360':12}
+PLATFORMS={'PlayStation 2':8,'PlayStation 3':9,'PlayStation 4':48,'Xbox 360':12,'Xbox Classic':11}
 _token=None
 
 def configured(): return bool(CLIENT_ID and CLIENT_SECRET)
