@@ -1,19 +1,21 @@
-# GameVault v1.2.0-dev1
+# GameVault v1.2.0-dev2
 
-First Xbox 360 / Aurora Console Inventory development build.
+Aurora inventory refinement based on a real Xbox 360 scan.
 
-## Aurora provider
-- Add Xbox 360 consoles from **Meine Konsolen**.
-- Aurora FTP defaults: port 21, `xboxftp` / `xboxftp`.
-- Optional NOVA endpoint defaults to port 9999 with `xboxhttp` credentials.
-- Connection test checks FTP and NOVA independently.
-- Read-only FTP discovery searches common Aurora database locations.
-- Downloads and introspects Aurora `content.db` locally with SQLite.
-- Extracts title, eight-character hexadecimal TitleID, path/storage and version when present.
-- Deduplicates discovered content by TitleID.
-- Reuses GameVault's installed-game matching and console-driven create-game workflow.
+## Xbox 360
+- Rejects Aurora filesystem/system pseudo rows such as Aurora, Flash, Hdd1, HddX, SysExt and System.
+- Requires a valid eight-character hexadecimal TitleID for Aurora content.
+- Separates Xbox 360 Game, XBLA, Xbox Classic, DLC and Title Update records.
+- Games are deduplicated by TitleID and content kind; DLC/TU retain content/version distinctions.
+- Scan diagnostics show examined, rejected and deduplicated rows plus content counts.
+- Console cards show counts by content kind.
+- Parallel scans are blocked with HTTP 409.
+- Library availability badge is platform-generic, including Xbox 360.
 
-## Diagnostic-first dev build
-Aurora database schemas vary by installation/version. The scan response includes discovered database paths, table/column schemas, rows examined and errors. A real Aurora scan will be used to refine dev2 without guessing the exact schema.
+## Console UX
+- Consoles can now be edited after creation.
+- Passwords remain unchanged when edit fields are left blank.
+- Scan confirmation text is provider-specific for PS3/webMAN and Xbox/Aurora.
+- Busy indicator remains visible for the complete scan.
 
-PS3 FTP/webMAN support from v1.1 remains available.
+PS3 inventory functionality remains available.
