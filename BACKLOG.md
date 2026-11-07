@@ -88,3 +88,8 @@ Target state in GameVault: owned, backup available/location, installed console(s
 - Add real DLC provider data when a reliable Aurora/XM360 source is available.
 - Improve nested child cards with MediaID, file size and active TU state.
 - Add x360db enrichment for Xbox 360 and evaluate a dedicated Xbox Classic metadata source.
+
+## v1.2 dev7
+- Determine reliable installed DLC records from Aurora/XM360 or Xbox content folders.
+- Add active/disabled TU state if available from Aurora.
+- Add x360db enrichment before IGDB for Xbox 360 TitleIDs.

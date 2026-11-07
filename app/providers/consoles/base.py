@@ -13,6 +13,7 @@ class InstalledTitle:
     content_id: Optional[str] = None
     category: Optional[str] = None
     storage: Optional[str] = None
+    file_size: Optional[str] = None
 
     def to_dict(self):
         return asdict(self)

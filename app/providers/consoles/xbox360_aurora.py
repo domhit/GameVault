@@ -80,7 +80,7 @@ class AuroraProvider(ConsoleProvider):
       for r in rows:
        tid=tid_hex(r['TitleId']);title=str(r['DisplayName'] or f'{tid} Title Update').strip();path=str(r['LivePath'] or r['BackupPath'] or r['FileName'] or '')
        if not tid:continue
-       items.append(InstalledTitle('Xbox 360',tid,title,version_text(r['BaseVersion'],r['Version']),'Title Update','Aurora TitleUpdates',path,tid_hex(r['MediaId']),'Title Update',self._storage(path)).to_dict())
+       tu=InstalledTitle('Xbox 360',tid,title,version_text(r['BaseVersion'],r['Version']),'Title Update','Aurora TitleUpdates',path,tid_hex(r['MediaId']),'Title Update',self._storage(path)).to_dict();tu['file_size']=str(r['FileSize'] or '') or None;items.append(tu)
       diag['content_counts']['Title Update']=len(rows)
      if dbpath.lower().endswith('settings.db') and 'ScanPaths' in tables:
       diag['scan_paths']=[dict(x) for x in con.execute('select Id,Path,Depth,ScriptData,OptionsFlag from ScanPaths order by Id').fetchall()]
