@@ -1,28 +1,18 @@
-# GameVault v1.2.0-dev3
+# GameVault v1.2.0-dev4
 
-Aurora provider mapped to the real Aurora database schema.
+## Manual console-to-library matching
+- Unknown Xbox 360 and PS3 inventory entries now offer **Vorhandenes Spiel suchen**.
+- Search is restricted to the correct platform and supports title or TitleID/Serial substrings.
+- The search dialog can hide games already linked to console inventory.
+- Manual matching links the installed row and copies a missing Xbox TitleID or PS3 Serial with `console_scan` provenance.
+- The confirmation dialog is platform-aware and no longer mentions PS3 for Xbox matches.
 
-## Exact Aurora schema
-- Reads `ContentItems` directly from `content.db`.
-- Uses Aurora's `TitleId`, `TitleName`, `Directory`, `MediaId`, `BaseVersion`, `ContentGroup`, `ContentType`, `FileType`, and `ScanPathId` columns.
-- `ContentGroup 1` becomes Xbox 360 Game.
-- `ContentGroup 2` becomes XBLA.
-- `ContentGroup 4` becomes Xbox Classic.
-- `ContentGroup 5` (Homebrew/System) is ignored for library inventory.
-- Multi-disc rows with the same TitleID are collapsed into one game while retaining all paths.
+## Inventory review filters
+- Installed content defaults to **Unbekannt**.
+- Status filters: Unbekannt, Alle, Zugeordnet.
+- Type filter is generated from the scanned inventory, including Xbox 360 Game, XBLA, Xbox Classic and Title Update.
+- Live counters show all, unknown and matched entries.
 
-## Title Updates
-- Reads the dedicated `TitleUpdates` table.
-- Stores TitleID, MediaID, BaseVersion, TU Version, display name, file size and live/backup path where available.
-- Title Updates are associated with their parent GameVault game by TitleID and do not offer `Als neues Spiel übernehmen`.
-
-## Aurora settings
-- Reads `ScanPaths` from `settings.db` for diagnostics.
-- The real paths from the supplied database include Content, Homebrew, Games360 and XboxClassic.
-
-## UI
-- Console counts separate Xbox 360 Game, XBLA, Xbox Classic and Title Update.
-- Added filters for available/not available on Xbox 360.
-- Child content such as Title Updates is labelled separately from the main installed game.
-
-PS3 inventory remains included.
+## Suggestions
+- Automatic suggestions also consider safe title containment, so `DiRT` can suggest `ColinMcRae: Dirt`.
+- Containment is suggestion-only and never triggers automatic assignment.

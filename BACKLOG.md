@@ -78,3 +78,8 @@ Target state in GameVault: owned, backup available/location, installed console(s
 - Present Title Updates and DLC nested under their parent Xbox game.
 - Add x360db enrichment before IGDB for unknown TitleIDs.
 - Compare installed Aurora TU version against an online TU source where reliable.
+
+## v1.2 dev5
+- Nest Title Updates and DLC underneath the parent Xbox game in the console UI.
+- Add x360db title/cover enrichment before IGDB for console-created Xbox games.
+- Add bulk review actions only after manual search behavior is validated.
