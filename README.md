@@ -1,21 +1,28 @@
-# GameVault v1.2.0-dev2
+# GameVault v1.2.0-dev3
 
-Aurora inventory refinement based on a real Xbox 360 scan.
+Aurora provider mapped to the real Aurora database schema.
 
-## Xbox 360
-- Rejects Aurora filesystem/system pseudo rows such as Aurora, Flash, Hdd1, HddX, SysExt and System.
-- Requires a valid eight-character hexadecimal TitleID for Aurora content.
-- Separates Xbox 360 Game, XBLA, Xbox Classic, DLC and Title Update records.
-- Games are deduplicated by TitleID and content kind; DLC/TU retain content/version distinctions.
-- Scan diagnostics show examined, rejected and deduplicated rows plus content counts.
-- Console cards show counts by content kind.
-- Parallel scans are blocked with HTTP 409.
-- Library availability badge is platform-generic, including Xbox 360.
+## Exact Aurora schema
+- Reads `ContentItems` directly from `content.db`.
+- Uses Aurora's `TitleId`, `TitleName`, `Directory`, `MediaId`, `BaseVersion`, `ContentGroup`, `ContentType`, `FileType`, and `ScanPathId` columns.
+- `ContentGroup 1` becomes Xbox 360 Game.
+- `ContentGroup 2` becomes XBLA.
+- `ContentGroup 4` becomes Xbox Classic.
+- `ContentGroup 5` (Homebrew/System) is ignored for library inventory.
+- Multi-disc rows with the same TitleID are collapsed into one game while retaining all paths.
 
-## Console UX
-- Consoles can now be edited after creation.
-- Passwords remain unchanged when edit fields are left blank.
-- Scan confirmation text is provider-specific for PS3/webMAN and Xbox/Aurora.
-- Busy indicator remains visible for the complete scan.
+## Title Updates
+- Reads the dedicated `TitleUpdates` table.
+- Stores TitleID, MediaID, BaseVersion, TU Version, display name, file size and live/backup path where available.
+- Title Updates are associated with their parent GameVault game by TitleID and do not offer `Als neues Spiel übernehmen`.
 
-PS3 inventory functionality remains available.
+## Aurora settings
+- Reads `ScanPaths` from `settings.db` for diagnostics.
+- The real paths from the supplied database include Content, Homebrew, Games360 and XboxClassic.
+
+## UI
+- Console counts separate Xbox 360 Game, XBLA, Xbox Classic and Title Update.
+- Added filters for available/not available on Xbox 360.
+- Child content such as Title Updates is labelled separately from the main installed game.
+
+PS3 inventory remains included.

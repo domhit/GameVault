@@ -72,3 +72,9 @@ Target state in GameVault: owned, backup available/location, installed console(s
 - Read Aurora settings.db scan paths.
 - Add x360db enrichment before IGDB.
 - Evaluate installed DLC and Title Update inventory.
+
+## v1.2 dev4
+- Identify installed DLC tables/content types from further Aurora/XM360 data.
+- Present Title Updates and DLC nested under their parent Xbox game.
+- Add x360db enrichment before IGDB for unknown TitleIDs.
+- Compare installed Aurora TU version against an online TU source where reliable.

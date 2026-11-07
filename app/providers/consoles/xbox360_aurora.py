@@ -1,34 +1,23 @@
 from ftplib import FTP
 from io import BytesIO
-import os, re, sqlite3, tempfile, requests
+import os, sqlite3, tempfile, requests
 from .base import ConsoleProvider, InstalledTitle
 
-TITLE_ID_RE=re.compile(r'(?i)\b[0-9a-f]{8}\b')
 DB_CANDIDATES=(
  '/Hdd1/Aurora/Data/Databases/content.db','/Hdd1/Aurora/Data/Databases/settings.db',
  '/Hdd1/Apps/Aurora/Data/Databases/content.db','/Hdd1/Apps/Aurora/Data/Databases/settings.db',
  '/Usb0/Aurora/Data/Databases/content.db','/Usb0/Aurora/Data/Databases/settings.db')
-SYSTEM_NAMES={'aurora','flash','hdd1','hddx','sysext','system','xbox360'}
+GROUP_NAMES={1:'Xbox 360 Game',2:'XBLA',4:'Xbox Classic',5:'Homebrew'}
 
-def norm_tid(v):
- s=re.sub(r'[^0-9A-F]','',str(v or '').upper())
- return s if re.fullmatch(r'[0-9A-F]{8}',s) else None
+def tid_hex(v):
+ try:return f'{int(v) & 0xFFFFFFFF:08X}'
+ except:return None
 
-def pick(row,*names):
- lower={str(k).casefold():v for k,v in row.items()}
- for n in names:
-  for k,v in lower.items():
-   if k==n.casefold() or n.casefold() in k:
-    if v not in (None,''):return v
- return None
-
-def classify(table,row,path):
- text=(' '.join([str(table),str(path)]+[str(v) for v in row.values() if v is not None])).casefold()
- if any(x in text for x in ('title update','titleupdate','tu_version','tu version')):return 'Title Update'
- if any(x in text for x in ('downloadable content',' dlc ','addon','add-on')):return 'DLC'
- if any(x in text for x in ('xbox live arcade','xbla')):return 'XBLA'
- if any(x in text for x in ('xbox classic','xbox1','xbox original')):return 'Xbox Classic'
- return 'Xbox 360 Game'
+def version_text(base,version=None):
+ try:
+  if version is not None:return f'TU{int(version)}'
+  return str(int(base)) if base not in (None,'') else None
+ except:return str(version if version is not None else base or '') or None
 
 class AuroraProvider(ConsoleProvider):
  provider_name='xbox360_aurora'
@@ -54,54 +43,51 @@ class AuroraProvider(ConsoleProvider):
     parent,name=path.rsplit('/',1);return name in [os.path.basename(x.rstrip('/')) for x in ftp.nlst(parent)]
    except Exception:return False
  def _discover_dbs(self,ftp):return [p for p in DB_CANDIDATES if self._exists(ftp,p)]
- def _rows(self,data):
-  fd,path=tempfile.mkstemp(suffix='.db');os.close(fd)
-  try:
-   open(path,'wb').write(data);con=sqlite3.connect(path);con.row_factory=sqlite3.Row;out=[];schema={}
-   tables=[r[0] for r in con.execute("select name from sqlite_master where type='table' and name not like 'sqlite_%'")]
-   for table in tables:
-    cols=[r[1] for r in con.execute(f'pragma table_info("{table}")')];schema[table]=cols
-    if not any(any(token in c.casefold() for token in ('title','name','path','content','version')) for c in cols):continue
-    try:
-     for row in con.execute(f'select * from "{table}" limit 20000'):out.append((table,dict(row)))
-    except Exception:pass
-   con.close();return out,schema
-  finally:
-   try:os.unlink(path)
-   except Exception:pass
+ def _open_db(self,data):
+  fd,path=tempfile.mkstemp(suffix='.db');os.close(fd);open(path,'wb').write(data)
+  con=sqlite3.connect(path);con.row_factory=sqlite3.Row
+  return con,path
+ def _storage(self,directory):
+  p=str(directory or '').strip('\\/')
+  return p.split('\\',1)[0].split('/',1)[0] or 'Aurora'
  def scan(self):
-  raw=[];diagnostics={'databases':[],'schemas':{},'errors':[],'rows_examined':0,'rows_rejected':0,'content_counts':{}}
+  items=[];diag={'databases':[],'errors':[],'content_items':0,'title_updates':0,'scan_paths':[],'content_counts':{},'ignored_homebrew':0}
   with self.connect() as ftp:
-   dbs=self._discover_dbs(ftp);diagnostics['databases']=dbs
+   dbs=self._discover_dbs(ftp);diag['databases']=dbs
    for dbpath in dbs:
-    if not dbpath.lower().endswith('content.db'):continue
-    try:rows,schema=self._rows(self._read(ftp,dbpath));diagnostics['schemas'][dbpath]=schema;diagnostics['rows_examined']+=len(rows)
-    except Exception as e:diagnostics['errors'].append(f'{dbpath}: {type(e).__name__}: {e}');continue
-    for table,row in rows:
-     rawid=pick(row,'titleid','title_id','title id')
-     if isinstance(rawid,int):tid=f'{rawid & 0xFFFFFFFF:08X}'
-     else:
-      m=TITLE_ID_RE.search(str(rawid or ''));tid=norm_tid(m.group(0)) if m else None
-     title=str(pick(row,'title','name','displayname','display_name') or '').strip()
-     path=str(pick(row,'path','file','location','root') or '').strip()
-     if not tid:
-      m=TITLE_ID_RE.search(' '.join(str(v) for v in row.values() if v is not None));tid=norm_tid(m.group(0)) if m else None
-     kind=classify(table,row,path)
-     # Reject Aurora/system filesystem pseudo rows and numeric database values.
-     if not tid or not title or title.casefold() in SYSTEM_NAMES or title.isdigit() or ('\\Xbox360\\System\\' in path):diagnostics['rows_rejected']+=1;continue
-     version=pick(row,'version','tu_version','titleupdate','title_update','media_version')
-     content_id=pick(row,'contentid','content_id','mediaid','media_id')
-     diagnostics['content_counts'][kind]=diagnostics['content_counts'].get(kind,0)+1
-     raw.append(InstalledTitle('Xbox 360',tid,title,str(version) if version not in (None,'') else None,kind,'Aurora content.db',path or dbpath,str(content_id) if content_id not in (None,'') else None,kind,(path.split(':',1)[0] if ':' in path else path.strip('\\/').split('\\',1)[0].split('/',1)[0] or 'Aurora')).to_dict())
-  # Games are unique by TitleID+kind; TU/DLC may have multiple versions/content IDs.
-  merged={}
-  for item in raw:
-   kind=item.get('category') or item.get('content_type')
-   extra=item.get('content_id') or item.get('installed_version') or item.get('path') if kind in ('DLC','Title Update') else ''
-   k=(item.get('identifier'),kind,extra)
-   if k not in merged:merged[k]=item;continue
-   old=merged[k]
-   for f in ('title','installed_version','path','storage','content_id'):
-    if not old.get(f) and item.get(f):old[f]=item[f]
-  diagnostics['deduplicated_items']=len(merged)
-  return {'items':list(merged.values()),'diagnostics':diagnostics}
+    try:con,tmp=self._open_db(self._read(ftp,dbpath))
+    except Exception as e:diag['errors'].append(f'{dbpath}: {type(e).__name__}: {e}');continue
+    try:
+     tables={r[0] for r in con.execute("select name from sqlite_master where type='table'")}
+     if dbpath.lower().endswith('content.db') and 'ContentItems' in tables:
+      rows=con.execute('select Id,Directory,TitleId,MediaId,BaseVersion,TitleName,Description,Publisher,Developer,ContentType,ContentGroup,FileType,ScanPathId from ContentItems').fetchall();diag['content_items']+=len(rows)
+      # One game row per TitleID/group. Multi-disc rows are collapsed, while their paths remain visible.
+      games={}
+      for r in rows:
+       group=int(r['ContentGroup'] or 0);kind=GROUP_NAMES.get(group)
+       if kind=='Homebrew' or kind is None:diag['ignored_homebrew']+=1;continue
+       tid=tid_hex(r['TitleId']);title=str(r['TitleName'] or '').strip()
+       if not tid or not title:continue
+       k=(tid,kind);path=str(r['Directory'] or '')
+       if k not in games:
+        games[k]={'platform':'Xbox 360','identifier':tid,'title':title,'installed_version':version_text(r['BaseVersion']),'content_type':kind,'source':'Aurora ContentItems','path':path,'content_id':tid_hex(r['MediaId']),'category':kind,'storage':self._storage(path),'paths':[path] if path else []}
+       elif path and path not in games[k]['paths']:games[k]['paths'].append(path)
+      for g in games.values():
+       if len(g['paths'])>1:g['path']=' | '.join(g['paths'])
+       g.pop('paths',None);items.append(InstalledTitle(**g).to_dict());diag['content_counts'][g['category']]=diag['content_counts'].get(g['category'],0)+1
+     if dbpath.lower().endswith('content.db') and 'TitleUpdates' in tables:
+      rows=con.execute('select Id,DisplayName,FileName,LivePath,TitleId,MediaId,BaseVersion,Version,BackupPath,FileSize from TitleUpdates').fetchall();diag['title_updates']+=len(rows)
+      for r in rows:
+       tid=tid_hex(r['TitleId']);title=str(r['DisplayName'] or f'{tid} Title Update').strip();path=str(r['LivePath'] or r['BackupPath'] or r['FileName'] or '')
+       if not tid:continue
+       items.append(InstalledTitle('Xbox 360',tid,title,version_text(r['BaseVersion'],r['Version']),'Title Update','Aurora TitleUpdates',path,tid_hex(r['MediaId']),'Title Update',self._storage(path)).to_dict())
+      diag['content_counts']['Title Update']=len(rows)
+     if dbpath.lower().endswith('settings.db') and 'ScanPaths' in tables:
+      diag['scan_paths']=[dict(x) for x in con.execute('select Id,Path,Depth,ScriptData,OptionsFlag from ScanPaths order by Id').fetchall()]
+    except Exception as e:diag['errors'].append(f'{dbpath}: {type(e).__name__}: {e}')
+    finally:
+     con.close()
+     try:os.unlink(tmp)
+     except Exception:pass
+  diag['deduplicated_items']=len(items)
+  return {'items':items,'diagnostics':diag}
