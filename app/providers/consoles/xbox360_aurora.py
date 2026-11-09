@@ -50,15 +50,27 @@ class AuroraProvider(ConsoleProvider):
  def _storage(self,directory):
   p=str(directory or '').strip('\\/')
   return p.split('\\',1)[0].split('/',1)[0] or 'Aurora'
+ def _listing_name(self,value):
+  raw=str(value or '').strip().rstrip('/')
+  if not raw:return ''
+  # FtpDll can return Unix LIST records even for NLST, e.g.
+  # drwxrwxrwx 1 root root 0 Jan 01 2000 Hdd1
+  parts=raw.split()
+  if len(parts)>=9 and parts[0][:1] in ('d','-','l'):
+   return ' '.join(parts[8:]).rstrip('/')
+  # Some servers use a Windows/DOS LIST form.
+  if len(parts)>=4 and ('<DIR>' in parts[2].upper() or parts[2].isdigit()):
+   return ' '.join(parts[3:]).rstrip('/')
+  return raw.rsplit('/',1)[-1]
  def _root_names(self,ftp):
-  try:return sorted({str(x).strip('/').split('/')[-1] for x in ftp.nlst('/') if str(x).strip('/')})
+  try:return sorted({self._listing_name(x) for x in ftp.nlst('/') if self._listing_name(x)})
   except Exception:return []
  def _resolve_case_path(self,ftp,path):
   parts=[x for x in str(path or '').replace('\\','/').split('/') if x];current='';steps=[]
   if not parts:return {'ok':False,'path':None,'steps':[],'error':'empty path'}
   for wanted in parts:
    parent=current or '/'
-   try:names=self._root_names(ftp) if parent=='/' else [str(x).rstrip('/').rsplit('/',1)[-1] for x in ftp.nlst(parent)]
+   try:names=self._root_names(ftp) if parent=='/' else [self._listing_name(x) for x in ftp.nlst(parent) if self._listing_name(x)]
    except Exception as e:return {'ok':False,'path':None,'steps':steps,'error':f'listing {parent}: {type(e).__name__}: {e}'}
    match=next((n for n in names if n.casefold()==wanted.casefold()),None)
    if not match:return {'ok':False,'path':None,'steps':steps+[{'parent':parent,'wanted':wanted,'available_sample':names[:20]}],'error':f'component not found: {wanted}'}
@@ -79,7 +91,7 @@ class AuroraProvider(ConsoleProvider):
   try:
    rows=[]
    for item in ftp.nlst(path):
-    name=str(item).rstrip('/').rsplit('/',1)[-1]
+    name=self._listing_name(item)
     if name in ('','.','..'):continue
     child=path.rstrip('/')+'/'+name
     try:size=ftp.size(child);rows.append((name,{'type':'file','size':str(int(size))}))
