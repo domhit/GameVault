@@ -1,17 +1,23 @@
-# GameVault v1.2.0-dev6
+# GameVault v1.2.0-dev7
 
-## Delete library games safely
-- Game detail now provides **Spiel löschen**.
-- A preview shows packages, console links, local cover and duplicate exclusions affected.
-- Deleting removes only GameVault database records and its local cached cover.
-- NAS/HDD backup files and real console content are never deleted.
-- Console inventory links are released so existing console content can reappear as unknown after the next scan.
+## Effective Xbox version
+- The visible Xbox installation version is now the highest locally available Title Update.
+- If no Title Update exists, GameVault falls back to Aurora `BaseVersion`.
+- The normal installation card labels this as **Installierter/verfügbarer Stand**.
+- Parent game source/path remain separate from Title Update source/path.
 
-## Console content in normal game details
-- Xbox Title Updates and future DLC assigned to a game are now visible directly on its GameVault detail page.
-- Content is grouped by physical console and shows title, MediaID/content ID, type, version, path, size and storage.
-- Aurora Title Update `FileSize` is now preserved.
+## Correct parent / child model
+- Scan consolidation uses `TitleID + content category` instead of TitleID alone.
+- Xbox 360 Game, XBLA and Xbox Classic remain parent entries.
+- Title Updates and DLC are always separate child entries.
+- Multiple TUs coexist by TitleID, MediaID/version/path and no longer overwrite the parent version.
+- The detail page renders **Updates und Zusatzinhalte** with separate Title Updates and DLC sections.
 
-## Aurora DLC/TU model
-- Title Updates continue to come from Aurora's dedicated `TitleUpdates` table and are nested below their parent game.
-- The nested UI is DLC-ready and will display DLC as soon as a reliable source is identified; GameVault does not fabricate DLC from ambiguous `ContentItems` rows.
+## Console provider strategy
+GameVault now documents and follows this preferred source order:
+1. console-maintained database or API;
+2. structured manifests such as PARAM.SFO;
+3. filesystem/FTP scan;
+4. optional enrichment source.
+
+Aurora uses FTP as transport for `content.db` / `settings.db`. PS3 currently uses PARAM.SFO plus webMAN because no equivalent authoritative database has yet been integrated. Future GoldHEN and Nintendo providers should prefer their structured databases/manifests when available.

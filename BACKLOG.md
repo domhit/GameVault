@@ -93,3 +93,14 @@ Target state in GameVault: owned, backup available/location, installed console(s
 - Determine reliable installed DLC records from Aurora/XM360 or Xbox content folders.
 - Add active/disabled TU state if available from Aurora.
 - Add x360db enrichment before IGDB for Xbox 360 TitleIDs.
+
+## Console provider source priority
+- Prefer console-maintained databases/APIs over directory crawling.
+- PS4/GoldHEN: investigate `app.db` via FTP.
+- PS3/webMAN: investigate XML/cache/database outputs before expanding FTP crawling.
+- Switch/Wii U/3DS: identify authoritative title databases or manifests first.
+
+## v1.2 dev8
+- Add online Xbox TU catalog and compare effective local TU against latest available.
+- Determine installed DLC reliably from Aurora/XM360 or Xbox content folders.
+- Add x360db enrichment before IGDB.
