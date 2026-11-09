@@ -1,16 +1,15 @@
-# GameVault v1.2.0-dev8
+# GameVault v1.2.0-dev9
 
-## Separate Xbox game-size scan
-- Xbox/Aurora consoles now provide **Größen aktualisieren** separately from the fast inventory scan.
-- GameVault uses Aurora's known game paths, then recursively sums only those paths via read-only FTP.
-- Xbox 360 Game, XBLA and Xbox Classic are scanned. Title Updates and DLC keep their own Aurora file-size metadata and are not re-counted as parent game size.
-- Multi-disc paths separated by `|` are summed.
-- Results are cached in PostgreSQL as bytes plus `size_checked_at`.
-- A normal Aurora inventory rescan preserves cached sizes when TitleID, category and path remain unchanged.
-- Console cards show cached total size and how many games have a calculated size.
-- Game details and console inventory show the calculated game size.
+## Aurora FTP path resolution fix
+- Aurora database paths such as `\Games360\007Bloodshot` are now tested against the actual FTP namespaces discovered at `/`.
+- Typical mapping becomes `\Games360\007Bloodshot` → `/Hdd1/Games360/007Bloodshot`.
+- Content and Xbox Classic paths use the same device-prefix resolution.
+- Existing absolute paths such as `/Hdd1/...` remain unchanged.
+- Multi-disc paths are resolved and summed independently.
 
-## Safety and performance
-- The size scan is read-only and never changes console files.
-- It is intentionally manual because recursively walking hundreds of game directories can take much longer than downloading Aurora's databases.
-- FTP `MLSD` is preferred; `NLST`/`SIZE` is used as fallback for Aurora FTP servers with limited command support.
+## Detailed size-scan diagnostics
+- The scanner reports FTP root entries, candidate paths, resolved path, listing method, files, directories and status.
+- An unavailable/unlistable path is an error and is no longer stored as a successful `0 B` result.
+- `0 B` is stored only when a directory was successfully listed and was genuinely empty.
+- Results distinguish success, partial traversal, empty directory and path-not-found/unlistable.
+- The result dialog shows successful examples and up to 20 failures with all attempted paths.

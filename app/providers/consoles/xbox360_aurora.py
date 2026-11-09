@@ -50,53 +50,78 @@ class AuroraProvider(ConsoleProvider):
  def _storage(self,directory):
   p=str(directory or '').strip('\\/')
   return p.split('\\',1)[0].split('/',1)[0] or 'Aurora'
- def _ftp_path(self,path):
-  p=str(path or '').strip().replace('\\','/').strip()
-  if not p:return None
-  if ' | ' in p:return [self._ftp_path(x) for x in p.split(' | ') if self._ftp_path(x)]
+ def _root_names(self,ftp):
+  try:return sorted({str(x).strip('/').split('/')[-1] for x in ftp.nlst('/') if str(x).strip('/')})
+  except Exception:return []
+ def _path_candidates(self,path,root_names):
+  raw=str(path or '').strip().replace('\\','/').strip()
+  if not raw:return []
+  if ' | ' in raw:
+   out=[]
+   for part in raw.split(' | '):out.extend(self._path_candidates(part,root_names))
+   return list(dict.fromkeys(out))
+  p=re.sub(r'/+','/',raw)
   if not p.startswith('/'):p='/'+p
-  return re.sub(r'/+','/',p)
- def _size_path(self,ftp,path,seen=None):
-  seen=seen or set();path=self._ftp_path(path)
-  if isinstance(path,list):return sum(self._size_path(ftp,x,seen) for x in path)
-  if not path or path in seen:return 0
+  first=p.strip('/').split('/',1)[0].casefold() if p.strip('/') else ''
+  roots={x.casefold():x for x in root_names}
+  candidates=[]
+  if first in roots:candidates.append('/'+roots[first]+('/'+p.strip('/').split('/',1)[1] if '/' in p.strip('/') else ''))
+  else:
+   for preferred in ('hdd1','usb0','usb1','usb2'):
+    if preferred in roots:candidates.append('/'+roots[preferred]+p)
+   candidates.append(p)
+  return list(dict.fromkeys(re.sub(r'/+','/',x) for x in candidates))
+ def _list_dir(self,ftp,path):
+  errors=[]
+  try:
+   entries=list(ftp.mlsd(path));return entries,'MLSD',errors
+  except Exception as e:errors.append(f'MLSD {type(e).__name__}: {e}')
+  try:
+   names=ftp.nlst(path);entries=[]
+   for item in names:
+    name=str(item).rstrip('/').rsplit('/',1)[-1]
+    if name in ('','.','..'):continue
+    child=path.rstrip('/')+'/'+name
+    try:size=ftp.size(child);entries.append((name,{'type':'file','size':str(int(size))}))
+    except Exception:entries.append((name,{'type':'unknown'}))
+   return entries,'NLST',errors
+  except Exception as e:errors.append(f'NLST {type(e).__name__}: {e}');return None,None,errors
+ def _size_resolved(self,ftp,path,seen=None):
+  seen=seen or set()
+  if not path or path in seen:return {'ok':False,'bytes':0,'status':'cycle_or_empty','path':path,'method':None,'errors':[],'files':0,'dirs':0}
   seen.add(path)
   try:
    size=ftp.size(path)
-   if size is not None:return int(size)
+   if size is not None:return {'ok':True,'bytes':int(size),'status':'file','path':path,'method':'SIZE','errors':[],'files':1,'dirs':0}
   except Exception:pass
-  total=0
-  try:
-   entries=list(ftp.mlsd(path))
-   for name,facts in entries:
-    if name in ('.','..'):continue
-    child=path.rstrip('/')+'/'+name
-    typ=(facts.get('type') or '').lower()
-    if typ=='file':total+=int(facts.get('size') or 0)
-    elif typ=='dir':total+=self._size_path(ftp,child,seen)
-   return total
-  except Exception:pass
-  try:
-   names=ftp.nlst(path)
-  except Exception:return 0
-  for item in names:
-   child=item if str(item).startswith('/') else path.rstrip('/')+'/'+str(item).rsplit('/',1)[-1]
-   if child.rstrip('/')==path.rstrip('/') or child in seen:continue
-   try:
-    size=ftp.size(child)
-    if size is not None:total+=int(size);continue
+  entries,method,errors=self._list_dir(ftp,path)
+  if entries is None:return {'ok':False,'bytes':0,'status':'not_found_or_unlistable','path':path,'method':method,'errors':errors,'files':0,'dirs':0}
+  total=files=dirs=0;child_errors=[]
+  for name,facts in entries:
+   child=path.rstrip('/')+'/'+name;typ=(facts.get('type') or '').lower()
+   if typ=='file':total+=int(facts.get('size') or 0);files+=1;continue
+   if typ=='dir':
+    result=self._size_resolved(ftp,child,seen);dirs+=1;total+=result['bytes'];files+=result['files'];dirs+=result['dirs']
+    if not result['ok']:child_errors.extend(result['errors'] or [result['status']+' '+child])
+    continue
+   try:size=ftp.size(child);total+=int(size or 0);files+=1;continue
    except Exception:pass
-   total+=self._size_path(ftp,child,seen)
-  return total
+   result=self._size_resolved(ftp,child,seen);dirs+=1;total+=result['bytes'];files+=result['files'];dirs+=result['dirs']
+   if not result['ok']:child_errors.extend(result['errors'] or [result['status']+' '+child])
+  return {'ok':True,'bytes':total,'status':'empty' if not entries else ('partial' if child_errors else 'directory'),'path':path,'method':method,'errors':errors+child_errors[:20],'files':files,'dirs':dirs}
  def calculate_sizes(self,records,progress=None):
   results=[]
   with self.connect() as ftp:
+   root_names=self._root_names(ftp)
    for index,record in enumerate(records,1):
-    path=record.get('path') or ''
-    try:
-     size=self._size_path(ftp,path,set());error=None
-    except Exception as e:size=0;error=f'{type(e).__name__}: {e}'
-    row={'id':record.get('id'),'path':path,'size_bytes':size,'error':error};results.append(row)
+    source_path=record.get('path') or '';candidates=self._path_candidates(source_path,root_names);attempts=[];chosen=None
+    for candidate in candidates:
+     result=self._size_resolved(ftp,candidate,set());attempts.append(result)
+     if result['ok'] and result['status'] not in ('cycle_or_empty',):chosen=result;break
+    if not chosen:
+     chosen={'ok':False,'bytes':0,'status':'path_not_found','path':None,'method':None,'errors':[],'files':0,'dirs':0}
+    row={'id':record.get('id'),'source_path':source_path,'resolved_path':chosen.get('path'),'size_bytes':chosen.get('bytes',0),'ok':bool(chosen.get('ok')),'status':chosen.get('status'),'method':chosen.get('method'),'files':chosen.get('files',0),'dirs':chosen.get('dirs',0),'root_names':root_names,'candidates':candidates,'attempts':[{'path':x.get('path'),'ok':x.get('ok'),'status':x.get('status'),'method':x.get('method'),'errors':x.get('errors')} for x in attempts],'error':None if chosen.get('ok') else '; '.join(e for x in attempts for e in x.get('errors',[]))[:500] or 'Pfad nicht gefunden'}
+    results.append(row)
     if progress:progress(index,len(records),row)
   return results
  def scan(self):
