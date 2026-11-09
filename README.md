@@ -1,18 +1,18 @@
-# GameVault v1.2.0-dev14
+# GameVault v1.2.0-dev15
 
-## Aurora whitespace bugfix
-FtpDll Unix-style listings are parsed without collapsing repeated spaces in filenames. This fixes paths such as `Command  Conquer 3` and `Kane  Lynch Dead Men` while preserving the working CWD size traversal from dev13.
+## Console bulk import
+A console can now import all still-unknown parent game entries in one operation.
 
-## Xbox Classic / XBMC4Gamers
-A new ConsoleProvider reads `MyPrograms6.db` from XBMC4Gamers over FTP. The supplied real database contains a `files` table with path, title ID, title, size, developer, publisher, genre, release date, synopsis and gameplay-feature metadata.
+- **Unbekannte übernehmen** first displays a preview with importable games, already-existing identifiers, skipped TU/DLC rows and examples.
+- Import is identifier-safe: an existing platform + TitleID/Serial is linked instead of duplicated.
+- New games inherit the platform identifier with `console_scan` provenance and are immediately linked to the console inventory.
+- Title Updates and DLC are never created as standalone library games.
+- Large console libraries deliberately skip per-title IGDB requests during bulk creation; existing global metadata/resolver actions can enrich them afterwards.
 
-Default database path:
-`/E/XBMC4Gamers/system/UserData/profiles/Dominic/Database/MyPrograms6.db`
+This is particularly useful for the supplied XBMC4Gamers database with more than one thousand Xbox Classic game rows.
 
-The first implementation deliberately imports only game rows under `\\Games\\`, excluding dashboard applications under `E:\\Apps`. `iSize` is used directly as the installed game size.
-
-## x360db enrichment
-The existing x360db provider is now surfaced as a global Xbox 360 enrichment action. x360db is matched primarily by 8-character TitleID and can fill missing title/developer/publisher/genre/release metadata and local box art before IGDB is needed. x360db documents a flat `games.json` index with these fields plus Media IDs and artwork. 
-
-## DLC
-The Xbox child-content model remains DLC-ready. This build does not invent DLC from ambiguous Aurora `ContentItems`; reliable DLC detection remains conservative until an authoritative installed-DLC structure is identified.
+## Provider-specific scan confirmation
+The scan dialog now describes the actual provider:
+- PS3: FTP + optional webMAN MOD.
+- Xbox 360: Aurora `content.db` / `settings.db` over FTP, with NOVA as supplemental diagnostics.
+- Xbox Classic: XBMC4Gamers `MyPrograms6.db` loaded read-only via FTP.
