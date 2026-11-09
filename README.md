@@ -1,15 +1,7 @@
-# GameVault v1.2.0-dev9
+# GameVault v1.2.0-dev10
 
-## Aurora FTP path resolution fix
-- Aurora database paths such as `\Games360\007Bloodshot` are now tested against the actual FTP namespaces discovered at `/`.
-- Typical mapping becomes `\Games360\007Bloodshot` → `/Hdd1/Games360/007Bloodshot`.
-- Content and Xbox Classic paths use the same device-prefix resolution.
-- Existing absolute paths such as `/Hdd1/...` remain unchanged.
-- Multi-disc paths are resolved and summed independently.
+Aurora paths are treated as Hdd1-relative. `\Games360\...`, `\Content\...` and `\XboxClassic\...` are prefixed with `/Hdd1` before FTP traversal.
 
-## Detailed size-scan diagnostics
-- The scanner reports FTP root entries, candidate paths, resolved path, listing method, files, directories and status.
-- An unavailable/unlistable path is an error and is no longer stored as a successful `0 B` result.
-- `0 B` is stored only when a directory was successfully listed and was genuinely empty.
-- Results distinguish success, partial traversal, empty directory and path-not-found/unlistable.
-- The result dialog shows successful examples and up to 20 failures with all attempted paths.
+Every path component is resolved case-insensitively against the actual FTP listing, so database `\games360\50 cent bots` resolves to `/Hdd1/Games360/50 cent bots`.
+
+The size-scan result reports FTP root entries, database path, Hdd1 candidate, resolved path, per-component case mapping and FTP errors. Failed paths are not cached as 0 B.
