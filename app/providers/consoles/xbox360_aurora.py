@@ -62,70 +62,68 @@ class AuroraProvider(ConsoleProvider):
   if len(parts)>=4 and ('<DIR>' in parts[2].upper() or parts[2].isdigit()):
    return ' '.join(parts[3:]).rstrip('/')
   return raw.rsplit('/',1)[-1]
- def _root_names(self,ftp):
-  try:return sorted({self._listing_name(x) for x in ftp.nlst('/') if self._listing_name(x)})
-  except Exception:return []
- def _resolve_case_path(self,ftp,path):
-  parts=[x for x in str(path or '').replace('\\','/').split('/') if x];current='';steps=[]
-  if not parts:return {'ok':False,'path':None,'steps':[],'error':'empty path'}
-  for wanted in parts:
-   parent=current or '/'
-   try:names=self._root_names(ftp) if parent=='/' else [self._listing_name(x) for x in ftp.nlst(parent) if self._listing_name(x)]
-   except Exception as e:return {'ok':False,'path':None,'steps':steps,'error':f'listing {parent}: {type(e).__name__}: {e}'}
-   match=next((n for n in names if n.casefold()==wanted.casefold()),None)
-   if not match:return {'ok':False,'path':None,'steps':steps+[{'parent':parent,'wanted':wanted,'available_sample':names[:20]}],'error':f'component not found: {wanted}'}
-   current=(current.rstrip('/')+'/'+match) if current else '/'+match;steps.append({'parent':parent,'wanted':wanted,'actual':match})
-  return {'ok':True,'path':current,'steps':steps,'error':None}
- def _aurora_paths(self,ftp,path):
-  raw=str(path or '').strip().replace('\\','/')
-  if not raw:return []
-  parts=[x.strip() for x in raw.split(' | ') if x.strip()];out=[]
-  for part in parts:
-   clean='/'+part.strip('/');candidate=clean if clean.casefold().startswith('/hdd1/') else '/Hdd1'+clean
-   resolved=self._resolve_case_path(ftp,candidate);out.append({'source':part,'candidate':candidate,'resolved':resolved.get('path'),'ok':resolved.get('ok'),'steps':resolved.get('steps',[]),'error':resolved.get('error')})
-  return out
- def _list_dir(self,ftp,path):
-  errors=[]
-  try:return list(ftp.mlsd(path)),'MLSD',errors
-  except Exception as e:errors.append(f'MLSD {type(e).__name__}: {e}')
+ def _entries_here(self,ftp):
+  raw=ftp.nlst()
+  return [self._listing_name(x) for x in raw if self._listing_name(x)]
+ def _cwd_ci(self,ftp,wanted):
+  names=self._entries_here(ftp);actual=next((n for n in names if n.casefold()==str(wanted).casefold()),None)
+  if not actual:return {'ok':False,'wanted':wanted,'actual':None,'available_sample':names[:30],'error':f'component not found: {wanted}'}
+  try:ftp.cwd(actual);return {'ok':True,'wanted':wanted,'actual':actual,'pwd':ftp.pwd(),'error':None}
+  except Exception as e:return {'ok':False,'wanted':wanted,'actual':actual,'available_sample':names[:30],'error':f'CWD {actual}: {type(e).__name__}: {e}'}
+ def _resolve_by_cwd(self,ftp,db_path):
+  start=ftp.pwd();steps=[]
   try:
-   rows=[]
-   for item in ftp.nlst(path):
-    name=self._listing_name(item)
-    if name in ('','.','..'):continue
-    child=path.rstrip('/')+'/'+name
-    try:size=ftp.size(child);rows.append((name,{'type':'file','size':str(int(size))}))
-    except Exception:rows.append((name,{'type':'unknown'}))
-   return rows,'NLST',errors
-  except Exception as e:return None,None,errors+[f'NLST {type(e).__name__}: {e}']
- def _size_path(self,ftp,path,seen=None):
-  seen=seen or set()
-  if not path or path in seen:return {'ok':False,'bytes':0,'status':'cycle','files':0,'dirs':0,'method':None,'errors':[]}
-  seen.add(path)
-  try:
-   size=ftp.size(path)
-   if size is not None:return {'ok':True,'bytes':int(size),'status':'file','files':1,'dirs':0,'method':'SIZE','errors':[]}
-  except Exception:pass
-  entries,method,errors=self._list_dir(ftp,path)
-  if entries is None:return {'ok':False,'bytes':0,'status':'not_found_or_unlistable','files':0,'dirs':0,'method':method,'errors':errors}
-  total=files=dirs=0;child_errors=[]
-  for name,facts in entries:
-   child=path.rstrip('/')+'/'+name;typ=(facts.get('type') or '').lower()
-   if typ=='file':total+=int(facts.get('size') or 0);files+=1;continue
-   result=self._size_path(ftp,child,seen);dirs+=1;total+=result['bytes'];files+=result['files'];dirs+=result['dirs']
-   if not result['ok']:child_errors.extend(result['errors'] or [result['status']+' '+child])
-  return {'ok':True,'bytes':total,'status':'empty' if not entries else ('partial' if child_errors else 'directory'),'files':files,'dirs':dirs,'method':method,'errors':errors+child_errors[:20]}
+   ftp.cwd('/')
+   first=self._cwd_ci(ftp,'Hdd1');steps.append(first)
+   if not first['ok']:return {'ok':False,'path':None,'steps':steps,'error':first['error']}
+   for wanted in [x for x in str(db_path or '').replace('\\','/').split('/') if x and x.casefold()!='hdd1']:
+    step=self._cwd_ci(ftp,wanted);steps.append(step)
+    if not step['ok']:return {'ok':False,'path':None,'steps':steps,'error':step['error']}
+   return {'ok':True,'path':ftp.pwd().rstrip('/') or '/','steps':steps,'error':None}
+  finally:
+   try:ftp.cwd(start)
+   except Exception:pass
+ def _walk_current_size(self,ftp,seen=None):
+  seen=seen or set();pwd=ftp.pwd()
+  if pwd in seen:return {'ok':False,'bytes':0,'status':'cycle','files':0,'dirs':0,'method':'CWD+NLST','errors':[]}
+  seen.add(pwd);total=files=dirs=0;errors=[]
+  try:raw=ftp.nlst()
+  except Exception as e:return {'ok':False,'bytes':0,'status':'list_failed','files':0,'dirs':0,'method':'CWD+NLST','errors':[f'{type(e).__name__}: {e}']}
+  entries=[]
+  for line in raw:
+   name=self._listing_name(line)
+   if name and name not in ('.','..'):entries.append((name,str(line).lstrip().startswith('d')))
+  for name,is_dir_hint in entries:
+   if is_dir_hint:
+    before=ftp.pwd()
+    try:
+     ftp.cwd(name);result=self._walk_current_size(ftp,seen);total+=result['bytes'];files+=result['files'];dirs+=1+result['dirs'];errors.extend(result['errors']);ftp.cwd(before);continue
+    except Exception as e:
+     try:ftp.cwd(before)
+     except Exception:pass
+   try:
+    size=ftp.size(name)
+    if size is not None:total+=int(size);files+=1;continue
+   except Exception as e:errors.append(f'{pwd}/{name}: {type(e).__name__}: {e}')
+  return {'ok':True,'bytes':total,'status':'empty' if not entries else ('partial' if errors else 'directory'),'files':files,'dirs':dirs,'method':'CWD+NLST/SIZE','errors':errors[:30]}
  def calculate_sizes(self,records,progress=None):
   results=[]
   with self.connect() as ftp:
-   roots=self._root_names(ftp)
+   ftp.cwd('/');roots=self._entries_here(ftp)
    for i,rec in enumerate(records,1):
-    infos=self._aurora_paths(ftp,rec.get('path'));attempts=[];total=0;ok=True
-    for info in infos:
-     if not info['ok']:
-      attempts.append({'source':info['source'],'candidate':info['candidate'],'resolved':None,'ok':False,'status':'case_resolve_failed','steps':info['steps'],'errors':[info['error']]});ok=False;continue
-     result=self._size_path(ftp,info['resolved'],set());total+=result['bytes'];attempts.append({'source':info['source'],'candidate':info['candidate'],'resolved':info['resolved'],'ok':result['ok'],'status':result['status'],'method':result['method'],'files':result['files'],'dirs':result['dirs'],'steps':info['steps'],'errors':result['errors']});ok=ok and result['ok']
-    results.append({'id':rec.get('id'),'source_path':rec.get('path'),'size_bytes':total,'ok':bool(infos) and ok,'status':'ok' if infos and ok else 'path_error','ftp_roots':roots,'attempts':attempts,'error':'; '.join(e for a in attempts for e in a.get('errors',[]))[:500] or None})
+    source=str(rec.get('path') or '');parts=[x.strip() for x in source.split(' | ') if x.strip()];attempts=[];total=0;all_ok=bool(parts)
+    for part in parts:
+     resolved=self._resolve_by_cwd(ftp,part)
+     if not resolved['ok']:
+      attempts.append({'source':part,'candidate':'/Hdd1/'+part.replace('\\','/').strip('/'),'resolved':None,'ok':False,'status':'cwd_resolve_failed','method':'CWD','files':0,'dirs':0,'steps':resolved['steps'],'errors':[resolved['error']]});all_ok=False;continue
+     old=ftp.pwd()
+     try:
+      ftp.cwd(resolved['path']);size=self._walk_current_size(ftp,set());total+=size['bytes'];attempts.append({'source':part,'candidate':'/Hdd1/'+part.replace('\\','/').strip('/'),'resolved':resolved['path'],'ok':size['ok'],'status':size['status'],'method':size['method'],'files':size['files'],'dirs':size['dirs'],'steps':resolved['steps'],'errors':size['errors']});all_ok=all_ok and size['ok']
+     finally:
+      try:ftp.cwd(old)
+      except Exception:pass
+    row={'id':rec.get('id'),'source_path':source,'size_bytes':total,'ok':all_ok,'status':'ok' if all_ok else 'path_error','ftp_roots':roots,'attempts':attempts,'error':'; '.join(e for a in attempts for e in a.get('errors',[]))[:500] or None};results.append(row)
+    if progress:progress(i,len(records),row)
   return results
  def scan(self):
   items=[];diag={'databases':[],'errors':[],'content_items':0,'title_updates':0,'scan_paths':[],'content_counts':{},'ignored_homebrew':0}
