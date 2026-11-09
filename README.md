@@ -1,23 +1,16 @@
-# GameVault v1.2.0-dev7
+# GameVault v1.2.0-dev8
 
-## Effective Xbox version
-- The visible Xbox installation version is now the highest locally available Title Update.
-- If no Title Update exists, GameVault falls back to Aurora `BaseVersion`.
-- The normal installation card labels this as **Installierter/verfügbarer Stand**.
-- Parent game source/path remain separate from Title Update source/path.
+## Separate Xbox game-size scan
+- Xbox/Aurora consoles now provide **Größen aktualisieren** separately from the fast inventory scan.
+- GameVault uses Aurora's known game paths, then recursively sums only those paths via read-only FTP.
+- Xbox 360 Game, XBLA and Xbox Classic are scanned. Title Updates and DLC keep their own Aurora file-size metadata and are not re-counted as parent game size.
+- Multi-disc paths separated by `|` are summed.
+- Results are cached in PostgreSQL as bytes plus `size_checked_at`.
+- A normal Aurora inventory rescan preserves cached sizes when TitleID, category and path remain unchanged.
+- Console cards show cached total size and how many games have a calculated size.
+- Game details and console inventory show the calculated game size.
 
-## Correct parent / child model
-- Scan consolidation uses `TitleID + content category` instead of TitleID alone.
-- Xbox 360 Game, XBLA and Xbox Classic remain parent entries.
-- Title Updates and DLC are always separate child entries.
-- Multiple TUs coexist by TitleID, MediaID/version/path and no longer overwrite the parent version.
-- The detail page renders **Updates und Zusatzinhalte** with separate Title Updates and DLC sections.
-
-## Console provider strategy
-GameVault now documents and follows this preferred source order:
-1. console-maintained database or API;
-2. structured manifests such as PARAM.SFO;
-3. filesystem/FTP scan;
-4. optional enrichment source.
-
-Aurora uses FTP as transport for `content.db` / `settings.db`. PS3 currently uses PARAM.SFO plus webMAN because no equivalent authoritative database has yet been integrated. Future GoldHEN and Nintendo providers should prefer their structured databases/manifests when available.
+## Safety and performance
+- The size scan is read-only and never changes console files.
+- It is intentionally manual because recursively walking hundreds of game directories can take much longer than downloading Aurora's databases.
+- FTP `MLSD` is preferred; `NLST`/`SIZE` is used as fallback for Aurora FTP servers with limited command support.

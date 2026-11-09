@@ -1,6 +1,6 @@
 from ftplib import FTP
 from io import BytesIO
-import os, sqlite3, tempfile, requests
+import os, re, sqlite3, tempfile, requests
 from .base import ConsoleProvider, InstalledTitle
 
 DB_CANDIDATES=(
@@ -50,6 +50,55 @@ class AuroraProvider(ConsoleProvider):
  def _storage(self,directory):
   p=str(directory or '').strip('\\/')
   return p.split('\\',1)[0].split('/',1)[0] or 'Aurora'
+ def _ftp_path(self,path):
+  p=str(path or '').strip().replace('\\','/').strip()
+  if not p:return None
+  if ' | ' in p:return [self._ftp_path(x) for x in p.split(' | ') if self._ftp_path(x)]
+  if not p.startswith('/'):p='/'+p
+  return re.sub(r'/+','/',p)
+ def _size_path(self,ftp,path,seen=None):
+  seen=seen or set();path=self._ftp_path(path)
+  if isinstance(path,list):return sum(self._size_path(ftp,x,seen) for x in path)
+  if not path or path in seen:return 0
+  seen.add(path)
+  try:
+   size=ftp.size(path)
+   if size is not None:return int(size)
+  except Exception:pass
+  total=0
+  try:
+   entries=list(ftp.mlsd(path))
+   for name,facts in entries:
+    if name in ('.','..'):continue
+    child=path.rstrip('/')+'/'+name
+    typ=(facts.get('type') or '').lower()
+    if typ=='file':total+=int(facts.get('size') or 0)
+    elif typ=='dir':total+=self._size_path(ftp,child,seen)
+   return total
+  except Exception:pass
+  try:
+   names=ftp.nlst(path)
+  except Exception:return 0
+  for item in names:
+   child=item if str(item).startswith('/') else path.rstrip('/')+'/'+str(item).rsplit('/',1)[-1]
+   if child.rstrip('/')==path.rstrip('/') or child in seen:continue
+   try:
+    size=ftp.size(child)
+    if size is not None:total+=int(size);continue
+   except Exception:pass
+   total+=self._size_path(ftp,child,seen)
+  return total
+ def calculate_sizes(self,records,progress=None):
+  results=[]
+  with self.connect() as ftp:
+   for index,record in enumerate(records,1):
+    path=record.get('path') or ''
+    try:
+     size=self._size_path(ftp,path,set());error=None
+    except Exception as e:size=0;error=f'{type(e).__name__}: {e}'
+    row={'id':record.get('id'),'path':path,'size_bytes':size,'error':error};results.append(row)
+    if progress:progress(index,len(records),row)
+  return results
  def scan(self):
   items=[];diag={'databases':[],'errors':[],'content_items':0,'title_updates':0,'scan_paths':[],'content_counts':{},'ignored_homebrew':0}
   with self.connect() as ftp:

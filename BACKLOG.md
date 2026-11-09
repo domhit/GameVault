@@ -104,3 +104,8 @@ Target state in GameVault: owned, backup available/location, installed console(s
 - Add online Xbox TU catalog and compare effective local TU against latest available.
 - Determine installed DLC reliably from Aurora/XM360 or Xbox content folders.
 - Add x360db enrichment before IGDB.
+
+## v1.2 dev9
+- Add cancellable/background size-scan jobs with progress polling if synchronous FTP scanning is too slow.
+- Detect changed directory timestamps or hashes to avoid recalculating unchanged game paths.
+- Report inaccessible paths separately from legitimate zero-byte paths.
