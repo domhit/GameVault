@@ -51,16 +51,13 @@ class AuroraProvider(ConsoleProvider):
   p=str(directory or '').strip('\\/')
   return p.split('\\',1)[0].split('/',1)[0] or 'Aurora'
  def _listing_name(self,value):
-  raw=str(value or '').strip().rstrip('/')
+  raw=str(value or '').rstrip('/\r\n')
   if not raw:return ''
-  # FtpDll can return Unix LIST records even for NLST, e.g.
-  # drwxrwxrwx 1 root root 0 Jan 01 2000 Hdd1
-  parts=raw.split()
-  if len(parts)>=9 and parts[0][:1] in ('d','-','l'):
-   return ' '.join(parts[8:]).rstrip('/')
-  # Some servers use a Windows/DOS LIST form.
-  if len(parts)>=4 and ('<DIR>' in parts[2].upper() or parts[2].isdigit()):
-   return ' '.join(parts[3:]).rstrip('/')
+  # Preserve the filename exactly, including repeated spaces. Strip only the 8 Unix LIST metadata fields.
+  m=re.match(r'^[dl-][rwx-]{9}\s+\d+\s+\S+\s+\S+\s+\d+\s+\S+\s+\d+\s+\S+\s+(.*)$',raw)
+  if m:return m.group(1).rstrip('/')
+  m=re.match(r'^\S+\s+\S+\s+(?:<DIR>|\d+)\s+(.*)$',raw,re.I)
+  if m:return m.group(1).rstrip('/')
   return raw.rsplit('/',1)[-1]
  def _entries_here(self,ftp):
   raw=ftp.nlst()

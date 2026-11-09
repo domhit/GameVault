@@ -1,10 +1,18 @@
-# GameVault v1.2.0-dev13
+# GameVault v1.2.0-dev14
 
-## Xbox size storage fix
-The dev12 FTP traversal is retained unchanged. It successfully reaches real Aurora game files; the remaining failure was PostgreSQL storage.
+## Aurora whitespace bugfix
+FtpDll Unix-style listings are parsed without collapsing repeated spaces in filenames. This fixes paths such as `Command  Conquer 3` and `Kane  Lynch Dead Men` while preserving the working CWD size traversal from dev13.
 
-- `installed_games.installed_size_bytes` now uses PostgreSQL `BIGINT` / SQLAlchemy `BigInteger`.
-- Startup performs an idempotent `ALTER COLUMN ... TYPE BIGINT`, so databases where dev8-dev12 originally created the column as 32-bit `INTEGER` are repaired automatically.
-- Raw sizes remain stored exactly as bytes for safe arithmetic and totals.
-- The UI never presents raw bytes for normal game sizes. It formats values automatically as KB, MB, GB or TB, using German decimal commas, e.g. `7,42 GB` or `1,73 TB`.
-- Existing dev12 CWD-based Aurora FtpDll traversal remains unchanged.
+## Xbox Classic / XBMC4Gamers
+A new ConsoleProvider reads `MyPrograms6.db` from XBMC4Gamers over FTP. The supplied real database contains a `files` table with path, title ID, title, size, developer, publisher, genre, release date, synopsis and gameplay-feature metadata.
+
+Default database path:
+`/E/XBMC4Gamers/system/UserData/profiles/Dominic/Database/MyPrograms6.db`
+
+The first implementation deliberately imports only game rows under `\\Games\\`, excluding dashboard applications under `E:\\Apps`. `iSize` is used directly as the installed game size.
+
+## x360db enrichment
+The existing x360db provider is now surfaced as a global Xbox 360 enrichment action. x360db is matched primarily by 8-character TitleID and can fill missing title/developer/publisher/genre/release metadata and local box art before IGDB is needed. x360db documents a flat `games.json` index with these fields plus Media IDs and artwork. 
+
+## DLC
+The Xbox child-content model remains DLC-ready. This build does not invent DLC from ambiguous Aurora `ContentItems`; reliable DLC detection remains conservative until an authoritative installed-DLC structure is identified.
