@@ -41,10 +41,16 @@ class PS4GoldHENProvider(ConsoleProvider):
     for r in c.execute("select titleId,key,val from tbl_appinfo where key in ('APP_VER','VERSION','TITLE','CONTENT_ID','#_size','_size_other_hdd')"):
      info.setdefault(r['titleId'],{})[r['key']]=r['val']
    seen=set()
+   diag['ignored_reasons']={'invalid_cusa':0,'not_game_ui':0,'category':0,'metadata_path':0,'duplicate':0}
    for r in rows:
-    tid=str(r['titleId'] or '').upper();ui=str(r['uiCategory'] or '').lower();cat=str(r['category'] or '')
-    if not CUSA_RE.fullmatch(tid) or ui!='game':diag['ignored']+=1;continue
-    if tid in seen:continue
+    tid=str(r['titleId'] or '').upper();ui=str(r['uiCategory'] or '').lower();cat=str(r['category'] or '').lower();meta=str(r['metaDataPath'] or '')
+    if not CUSA_RE.fullmatch(tid):diag['ignored']+=1;diag['ignored_reasons']['invalid_cusa']+=1;continue
+    if ui!='game':diag['ignored']+=1;diag['ignored_reasons']['not_game_ui']+=1;continue
+    # Validated against the supplied real app.db: installed/visible game candidates use gd/gp and /user/appmeta/.
+    # Do NOT require contentSize > 0; real playable/visible installations can legitimately report zero here.
+    if cat not in ('gd','gp'):diag['ignored']+=1;diag['ignored_reasons']['category']+=1;continue
+    if not meta.startswith('/user/appmeta/'):diag['ignored']+=1;diag['ignored_reasons']['metadata_path']+=1;continue
+    if tid in seen:diag['ignored']+=1;diag['ignored_reasons']['duplicate']+=1;continue
     seen.add(tid);inf=info.get(tid,{});title=str(inf.get('TITLE') or r['titleName'] or tid).strip();ver=str(inf.get('APP_VER') or inf.get('VERSION') or '').strip() or None;size=r['contentSize']
     try:size=int(size) if size is not None else int(inf.get('#_size') or 0) or None
     except:size=None
