@@ -3,6 +3,7 @@ from io import BytesIO
 import os, re
 from .base import ConsoleProvider, InstalledTitle
 from .ps3_sfo import parse_sfo
+from .ps3_mms import parse_metadata_db_hdd
 
 GAME_CATEGORIES={'HG','DG','GD','1P','2P','MN','PE'}
 PLAYABLE_CATEGORIES={'HG','DG','1P','2P','MN','PE'}
@@ -78,7 +79,7 @@ class PS3FTPProvider(ConsoleProvider):
         return results
     def scan(self):
         found=[]
-        diagnostics={'paths':{},'errors':[],'categories':{},'platforms':{},'mms_db':{'path':MMS_DB_ROOT,'files':[]}}
+        diagnostics={'paths':{},'errors':[],'categories':{},'platforms':{},'mms_db':{'path':MMS_DB_ROOT,'files':[],'metadata_db_hdd':{'parsed':False}}}
         with self.connect() as ftp:
             # Inventory the proprietary XMB/MMS databases for diagnostics only.
             for name in self._names(ftp,MMS_DB_ROOT):
@@ -86,6 +87,15 @@ class PS3FTPProvider(ConsoleProvider):
                 try:size=ftp.size(full)
                 except Exception:size=None
                 diagnostics['mms_db']['files'].append({'name':name,'bytes':size})
+
+            # dev25: read and diagnostically parse only metadata_db_hdd. plus/system are intentionally ignored.
+            try:
+                mms_raw=self._read(ftp,f'{MMS_DB_ROOT}/metadata_db_hdd')
+                mms=parse_metadata_db_hdd(mms_raw)
+                diagnostics['mms_db']['metadata_db_hdd']={'parsed':True,**mms['diagnostics']}
+                diagnostics['mms_db']['metadata_db_hdd']['sample_records']=mms['records'][:20]
+            except Exception as e:
+                diagnostics['mms_db']['metadata_db_hdd']={'parsed':False,'error':f'{type(e).__name__}: {e}'}
 
             # Installed package content, including PS1/PS2 Classics and PSP packages.
             root='/dev_hdd0/game';names=self._names(ftp,root);diagnostics['paths'][root]=len(names)

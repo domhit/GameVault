@@ -1,4 +1,4 @@
-# GameVault v1.2.0-dev24
+# GameVault v1.2.0-dev25
 
 ## PS4 installed-game filter refined
 The GoldHEN `app.db` provider now treats a row as an installed PS4 game only when all of these are true:
@@ -34,3 +34,11 @@ The scan diagnostics now break ignored rows down by invalid CUSA, non-game UI ca
 - Fixes the PSF header parser: PARAM.SFO has five header values (magic, version, key-table offset, data-table offset, entry count).
 - dev23 unpacked five values into four variables, causing every `/dev_hdd0/game/*/PARAM.SFO` to fail with `too many values to unpack (expected 4)`.
 - Retains the dev23 diagnostics so package categories and the three target titles can be verified after the fix.
+
+
+#### dev25 PS3 XMB metadata_db_hdd diagnostics
+- Reads `/dev_hdd0/mms/db/metadata_db_hdd` read-only during the PS3 inventory scan.
+- Adds a conservative diagnostic parser for Game-like records and reports unique title IDs, nearby titles, original/sub IDs, directory paths and version-like fields.
+- Explicit target diagnostics remain for NPUI94240, NPUI94451 and SLES54819.
+- `metadata_db_plus` and `metadata_db_system` are intentionally not parsed or imported.
+- dev25 does not create inventory rows from MMS data yet. The parser first validates the structure against the real console output, avoiding system/homebrew false positives.
