@@ -1,4 +1,4 @@
-# GameVault v1.2.0-dev23
+# GameVault v1.2.0-dev24
 
 ## PS4 installed-game filter refined
 The GoldHEN `app.db` provider now treats a row as an installed PS4 game only when all of these are true:
@@ -28,3 +28,9 @@ The scan diagnostics now break ignored rows down by invalid CUSA, non-game UI ca
 - Reports parsed/failed SFO counts and category counts.
 - Explicitly traces `NPUI94240`, `NPUI94451` and `SLES54819`, including whether the folder exists and the parsed TITLE/TITLE_ID/CATEGORY/CONTENT_ID/version.
 - The console scan status now includes the PS3 SFO parsed/error totals.
+
+
+### dev24 PS3 PARAM.SFO parser fix
+- Fixes the PSF header parser: PARAM.SFO has five header values (magic, version, key-table offset, data-table offset, entry count).
+- dev23 unpacked five values into four variables, causing every `/dev_hdd0/game/*/PARAM.SFO` to fail with `too many values to unpack (expected 4)`.
+- Retains the dev23 diagnostics so package categories and the three target titles can be verified after the fix.

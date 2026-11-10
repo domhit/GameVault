@@ -7,7 +7,7 @@ FMT_INT32=0x0404
 def parse_sfo(data: bytes) -> dict:
     if len(data) < 20 or data[:4] != b'\x00PSF':
         raise ValueError('Invalid PARAM.SFO')
-    _, key_off, data_off, count = struct.unpack_from('<4sIIII', data, 0)
+    magic, version, key_off, data_off, count = struct.unpack_from('<4sIIII', data, 0)
     out={}
     for i in range(count):
         pos=20+i*16
