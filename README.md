@@ -1,4 +1,4 @@
-# GameVault v1.2.0-dev28
+# GameVault v1.2.0-dev29
 
 ## PS4 installed-game filter refined
 The GoldHEN `app.db` provider now treats a row as an installed PS4 game only when all of these are true:
@@ -69,3 +69,9 @@ The scan diagnostics now break ignored rows down by invalid CUSA, non-game UI ca
 - MMS diagnostics are compact: schema field inventory is summarized instead of dumping every field.
 - Adds structural 0x2000-byte page mapping for `metadata_db_hdd`, including total pages and target pages for the three known IDs.
 - Keeps MMS object values diagnostic-only until schema-defined object records are decoded reliably.
+
+
+#### dev29 PS3 known non-game cleanup and MMS target-page analyzer
+- Known launchers, placeholders, configuration databases and add-on content no longer count as unknown games.
+- Profiles MMS target pages 422 and 424 structurally: page headers, integer views, occupancy, contained IDs and target offsets.
+- MMS remains diagnostic-only; no guessed field assignment or database import is performed.

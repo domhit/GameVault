@@ -8,7 +8,9 @@ from .ps3_mms import parse_metadata_db_hdd
 GAME_CATEGORIES={'HG','DG','GD','1P','2P','MN','PE'}
 PLAYABLE_CATEGORIES={'HG','DG','1P','2P','MN','PE'}
 NON_GAME_CATEGORIES={'GD','SF'}
-HOMEBREW_HINTS=('webman','multiman','irisman','apollo save','prepiso','openps3ftp','rebug toolbox','psnpatch','sen enabler','movian')
+HOMEBREW_HINTS=('webman','multiman','irisman','apollo save','prepiso','openps3ftp','rebug toolbox','psnpatch','sen enabler','movian','xmb manager','reload xmb','pkg/rom launcher','ps2 config database','ps2 classics placeholder')
+NON_GAME_IDS={'XMBMANPLS','RELOADXMB','PKGLAUNCH','PS2CONFIG','PS2U10000'}
+NON_GAME_TITLE_HINTS=('additional content','placeholder','config database')
 CATEGORY_NAMES={'HG':'HDD Game','DG':'Disc Game','GD':'Game Data / Patch / DLC','2P':'PS2 Classic','1P':'PS1 Classic','MN':'PSP Mini','PE':'PSP Remaster','AP':'Application'}
 CATEGORY_PLATFORMS={'1P':'PlayStation 1','2P':'PlayStation 2','MN':'PlayStation Portable','PE':'PlayStation Portable'}
 MMS_DB_ROOT='/dev_hdd0/mms/db'
