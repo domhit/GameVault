@@ -27,16 +27,24 @@ class PS3FTPProvider(ConsoleProvider):
         except Exception:return []
     def _read(self,ftp,path):
         b=BytesIO();ftp.retrbinary('RETR '+path,b.write);return b.getvalue()
-    def _sfo_title(self,ftp,path,source):
-        try:sfo=parse_sfo(self._read(ftp,path))
-        except Exception:return None
-        cat=str(sfo.get('CATEGORY') or '')
+    def _sfo_title_diag(self,ftp,path,source):
+        diag={'path':path,'found':False,'parsed':False}
+        try:
+            raw=self._read(ftp,path);diag['found']=True;diag['bytes']=len(raw)
+            sfo=parse_sfo(raw);diag['parsed']=True
+        except Exception as e:
+            diag['error']=f'{type(e).__name__}: {e}'
+            return None,diag
+        cat=str(sfo.get('CATEGORY') or '').strip().upper()
         ident=str(sfo.get('TITLE_ID') or sfo.get('TITLEID') or '').strip().upper() or None
         title=str(sfo.get('TITLE') or ident or os.path.basename(os.path.dirname(path))).strip()
         ver=str(sfo.get('APP_VER') or sfo.get('VERSION') or '').strip() or None
         cid=str(sfo.get('CONTENT_ID') or '').strip() or None
+        diag.update({'title':title,'title_id':ident,'category':cat or None,'content_id':cid,'version':ver,'playable_category':cat in PLAYABLE_CATEGORIES})
         platform=CATEGORY_PLATFORMS.get(cat,'PlayStation 3')
-        return InstalledTitle(platform,ident,title,ver,CATEGORY_NAMES.get(cat,cat or 'Unknown'),source,os.path.dirname(path),cid,cat,path.split('/')[1] if path.startswith('/dev_') else None)
+        return InstalledTitle(platform,ident,title,ver,CATEGORY_NAMES.get(cat,cat or 'Unknown'),source,os.path.dirname(path),cid,cat,path.split('/')[1] if path.startswith('/dev_') else None),diag
+    def _sfo_title(self,ftp,path,source):
+        return self._sfo_title_diag(ftp,path,source)[0]
     def _size_tree(self,ftp,path,seen=None):
         seen=seen or set()
         if path in seen:return {'ok':False,'bytes':0,'files':0,'dirs':0,'error':'cycle'}
@@ -81,9 +89,22 @@ class PS3FTPProvider(ConsoleProvider):
 
             # Installed package content, including PS1/PS2 Classics and PSP packages.
             root='/dev_hdd0/game';names=self._names(ftp,root);diagnostics['paths'][root]=len(names)
+            targets={'NPUI94240','NPUI94451','SLES54819'}
+            diagnostics['hdd_game']={'folders':len(names),'sfo_parsed':0,'sfo_failed':0,'target_ids':{},'category_counts':{}}
             for name in names:
-                item=self._sfo_title(ftp,f'{root}/{name}/PARAM.SFO','FTP HDD')
+                sfo_path=f'{root}/{name}/PARAM.SFO'
+                item,diag=self._sfo_title_diag(ftp,sfo_path,'FTP HDD')
+                if diag.get('parsed'):
+                    diagnostics['hdd_game']['sfo_parsed']+=1
+                    cat=diag.get('category') or 'Unknown';diagnostics['hdd_game']['category_counts'][cat]=diagnostics['hdd_game']['category_counts'].get(cat,0)+1
+                else:diagnostics['hdd_game']['sfo_failed']+=1
+                keys={name.upper(),str(diag.get('title_id') or '').upper()}
+                hit=targets.intersection(keys)
+                for tid in hit:diagnostics['hdd_game']['target_ids'][tid]=diag
                 if item:found.append(item)
+            for tid in sorted(targets):
+                if tid not in diagnostics['hdd_game']['target_ids']:
+                    diagnostics['hdd_game']['target_ids'][tid]={'folder_seen':tid in {x.upper() for x in names},'found':False,'parsed':False,'note':'Kein passender, geparster PARAM.SFO-Eintrag im FTP-Scan'}
 
             # Extracted/JB games expose PS3_GAME/PARAM.SFO.
             for root in ('/dev_hdd0/GAMES','/dev_hdd0/GAMEZ'):
