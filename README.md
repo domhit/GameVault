@@ -1,18 +1,16 @@
-# GameVault v1.2.0-dev15
+# GameVault v1.2.0-dev18
 
-## Console bulk import
-A console can now import all still-unknown parent game entries in one operation.
+## Incremental Xbox size scan
+- **Größen aktualisieren** now scans only games whose `installed_size_bytes` is still empty by default.
+- Existing cached sizes are skipped, so adding one new Aurora game normally traverses only that new game path.
+- A maintenance choice allows **Alle Größen neu berechnen** when a full refresh is explicitly wanted.
+- The result shows newly checked, cached, remote-skipped and failed counts plus the total cached console size.
 
-- **Unbekannte übernehmen** first displays a preview with importable games, already-existing identifiers, skipped TU/DLC rows and examples.
-- Import is identifier-safe: an existing platform + TitleID/Serial is linked instead of duplicated.
-- New games inherit the platform identifier with `console_scan` provenance and are immediately linked to the console inventory.
-- Title Updates and DLC are never created as standalone library games.
-- Large console libraries deliberately skip per-title IGDB requests during bulk creation; existing global metadata/resolver actions can enrich them afterwards.
+## PS3 size scan
+The same separate/manual size scan is now available for PS3 consoles.
 
-This is particularly useful for the supplied XBMC4Gamers database with more than one thousand Xbox Classic game rows.
-
-## Provider-specific scan confirmation
-The scan dialog now describes the actual provider:
-- PS3: FTP + optional webMAN MOD.
-- Xbox 360: Aurora `content.db` / `settings.db` over FTP, with NOVA as supplemental diagnostics.
-- Xbox Classic: XBMC4Gamers `MyPrograms6.db` loaded read-only via FTP.
+- Local `/dev_hdd0/PS3ISO/*.iso` is measured directly via FTP `SIZE`.
+- Local folder/JB games are recursively summed over FTP.
+- Existing cached sizes are skipped by default.
+- webMAN `/net0`, `/net1`, etc. are deliberately reported as remote/not measurable through the PS3 FTP provider and are not stored as `0 B`.
+- Sizes use the existing `BIGINT` byte storage and human-readable MB/GB/TB display.

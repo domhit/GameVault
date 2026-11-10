@@ -34,6 +34,37 @@ class PS3FTPProvider(ConsoleProvider):
         ver=str(sfo.get('APP_VER') or sfo.get('VERSION') or '').strip() or None
         cid=str(sfo.get('CONTENT_ID') or '').strip() or None
         return InstalledTitle('PlayStation 3',ident,title,ver,CATEGORY_NAMES.get(cat,cat or 'Unknown'),source,os.path.dirname(path),cid,cat,path.split('/')[1] if path.startswith('/dev_') else None)
+    def _size_tree(self,ftp,path,seen=None):
+        seen=seen or set()
+        if path in seen:return {'ok':False,'bytes':0,'files':0,'dirs':0,'error':'cycle'}
+        seen.add(path)
+        try:
+            size=ftp.size(path)
+            if size is not None:return {'ok':True,'bytes':int(size),'files':1,'dirs':0,'error':None}
+        except Exception:pass
+        try:names=ftp.nlst(path)
+        except Exception as e:return {'ok':False,'bytes':0,'files':0,'dirs':0,'error':f'{type(e).__name__}: {e}'}
+        total=files=dirs=0;errors=[]
+        for raw in names:
+            child=str(raw)
+            if child.rstrip('/')==path.rstrip('/') or child.rstrip('/').rsplit('/',1)[-1] in ('.','..'):continue
+            try:
+                size=ftp.size(child)
+                if size is not None:total+=int(size);files+=1;continue
+            except Exception:pass
+            r=self._size_tree(ftp,child,seen);total+=r['bytes'];files+=r['files'];dirs+=1+r['dirs']
+            if not r['ok']:errors.append(r['error'])
+        return {'ok':not errors or total>0,'bytes':total,'files':files,'dirs':dirs,'error':'; '.join(x for x in errors if x)[:400] or None}
+    def calculate_sizes(self,records):
+        results=[]
+        with self.connect() as ftp:
+            for rec in records:
+                path=str(rec.get('path') or '')
+                if path.startswith('/net'):
+                    results.append({'id':rec.get('id'),'path':path,'ok':False,'remote':True,'bytes':0,'error':'webMAN Netzwerkpfad ist nicht über PS3 FTP messbar'});continue
+                # Local ISO is a file; folder/JB content is recursively summed.
+                r=self._size_tree(ftp,path,set());results.append({'id':rec.get('id'),'path':path,'ok':r['ok'],'remote':False,'bytes':r['bytes'],'files':r['files'],'dirs':r['dirs'],'error':r['error']})
+        return results
     def scan(self):
         found=[];diagnostics={'paths':{},'errors':[]}
         with self.connect() as ftp:
