@@ -1,4 +1,4 @@
-# GameVault v1.2.0-dev25
+# GameVault v1.2.0-dev26
 
 ## PS4 installed-game filter refined
 The GoldHEN `app.db` provider now treats a row as an installed PS4 game only when all of these are true:
@@ -42,3 +42,13 @@ The scan diagnostics now break ignored rows down by invalid CUSA, non-game UI ca
 - Explicit target diagnostics remain for NPUI94240, NPUI94451 and SLES54819.
 - `metadata_db_plus` and `metadata_db_system` are intentionally not parsed or imported.
 - dev25 does not create inventory rows from MMS data yet. The parser first validates the structure against the real console output, avoiding system/homebrew false positives.
+
+
+#### dev26 PS3 package identity and classification
+- Stores the `/dev_hdd0/game/<folder>` package ID as `content_id` when it differs from PARAM.SFO `TITLE_ID`; e.g. NPUI94240 + SCUS94240.
+- Cleans trademark symbols and normalizes `Syphon Filter®2` to `Syphon Filter 2`.
+- Separates `playable`, `game_candidates`, `non_game` (`GD`, `SF`) and known `homebrew` counts.
+- Keeps HG visible but excludes known homebrew titles from game candidates.
+- Reports the exact folder/path/error for failed PARAM.SFO files.
+- Removes `.` and `..` from MMS diagnostics.
+- Keeps metadata_db_hdd diagnostic-only; plus/system remain ignored.

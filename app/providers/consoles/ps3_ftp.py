@@ -7,6 +7,8 @@ from .ps3_mms import parse_metadata_db_hdd
 
 GAME_CATEGORIES={'HG','DG','GD','1P','2P','MN','PE'}
 PLAYABLE_CATEGORIES={'HG','DG','1P','2P','MN','PE'}
+NON_GAME_CATEGORIES={'GD','SF'}
+HOMEBREW_HINTS=('webman','multiman','irisman','apollo save','prepiso','openps3ftp','rebug toolbox','psnpatch','sen enabler','movian')
 CATEGORY_NAMES={'HG':'HDD Game','DG':'Disc Game','GD':'Game Data / Patch / DLC','2P':'PS2 Classic','1P':'PS1 Classic','MN':'PSP Mini','PE':'PSP Remaster','AP':'Application'}
 CATEGORY_PLATFORMS={'1P':'PlayStation 1','2P':'PlayStation 2','MN':'PlayStation Portable','PE':'PlayStation Portable'}
 MMS_DB_ROOT='/dev_hdd0/mms/db'
@@ -39,9 +41,15 @@ class PS3FTPProvider(ConsoleProvider):
         cat=str(sfo.get('CATEGORY') or '').strip().upper()
         ident=str(sfo.get('TITLE_ID') or sfo.get('TITLEID') or '').strip().upper() or None
         title=str(sfo.get('TITLE') or ident or os.path.basename(os.path.dirname(path))).strip()
+        title=re.sub(r'[®™©]+','',title).strip()
+        title=re.sub(r'(?i)(filter)(2)$',r'\1 2',title)
         ver=str(sfo.get('APP_VER') or sfo.get('VERSION') or '').strip() or None
         cid=str(sfo.get('CONTENT_ID') or '').strip() or None
-        diag.update({'title':title,'title_id':ident,'category':cat or None,'content_id':cid,'version':ver,'playable_category':cat in PLAYABLE_CATEGORIES})
+        install_folder=os.path.basename(os.path.dirname(path)).strip()
+        package_id=install_folder.upper() if re.fullmatch(r'[A-Z0-9]{9,12}',install_folder.upper()) else None
+        if package_id and package_id != ident: cid=cid or package_id
+        is_homebrew=any(x in title.casefold() for x in HOMEBREW_HINTS)
+        diag.update({'title':title,'title_id':ident,'package_id':package_id,'category':cat or None,'content_id':cid,'version':ver,'playable_category':cat in PLAYABLE_CATEGORIES and not is_homebrew,'homebrew_hint':is_homebrew})
         platform=CATEGORY_PLATFORMS.get(cat,'PlayStation 3')
         return InstalledTitle(platform,ident,title,ver,CATEGORY_NAMES.get(cat,cat or 'Unknown'),source,os.path.dirname(path),cid,cat,path.split('/')[1] if path.startswith('/dev_') else None),diag
     def _sfo_title(self,ftp,path,source):
@@ -86,7 +94,8 @@ class PS3FTPProvider(ConsoleProvider):
                 full=f'{MMS_DB_ROOT}/{name}'
                 try:size=ftp.size(full)
                 except Exception:size=None
-                diagnostics['mms_db']['files'].append({'name':name,'bytes':size})
+                
+                if name not in ('.','..'):diagnostics['mms_db']['files'].append({'name':name,'bytes':size})
 
             # dev25: read and diagnostically parse only metadata_db_hdd. plus/system are intentionally ignored.
             try:
@@ -100,14 +109,16 @@ class PS3FTPProvider(ConsoleProvider):
             # Installed package content, including PS1/PS2 Classics and PSP packages.
             root='/dev_hdd0/game';names=self._names(ftp,root);diagnostics['paths'][root]=len(names)
             targets={'NPUI94240','NPUI94451','SLES54819'}
-            diagnostics['hdd_game']={'folders':len(names),'sfo_parsed':0,'sfo_failed':0,'target_ids':{},'category_counts':{}}
+            diagnostics['hdd_game']={'folders':len(names),'sfo_parsed':0,'sfo_failed':0,'failed_sfo':[],'target_ids':{},'category_counts':{}}
             for name in names:
                 sfo_path=f'{root}/{name}/PARAM.SFO'
                 item,diag=self._sfo_title_diag(ftp,sfo_path,'FTP HDD')
                 if diag.get('parsed'):
                     diagnostics['hdd_game']['sfo_parsed']+=1
                     cat=diag.get('category') or 'Unknown';diagnostics['hdd_game']['category_counts'][cat]=diagnostics['hdd_game']['category_counts'].get(cat,0)+1
-                else:diagnostics['hdd_game']['sfo_failed']+=1
+                else:
+                    diagnostics['hdd_game']['sfo_failed']+=1
+                    diagnostics['hdd_game']['failed_sfo'].append({'folder':name,'path':sfo_path,'error':diag.get('error')})
                 keys={name.upper(),str(diag.get('title_id') or '').upper()}
                 hit=targets.intersection(keys)
                 for tid in hit:diagnostics['hdd_game']['target_ids'][tid]=diag
