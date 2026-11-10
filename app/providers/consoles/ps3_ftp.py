@@ -26,7 +26,14 @@ class PS3FTPProvider(ConsoleProvider):
             return {'ok':True,'provider':self.provider_name,'welcome':welcome,'pwd':pwd}
         except Exception as e:return {'ok':False,'provider':self.provider_name,'error':f'{type(e).__name__}: {e}'}
     def _names(self,ftp,path):
-        try:return [os.path.basename(x.rstrip('/')) for x in ftp.nlst(path) if os.path.basename(x.rstrip('/'))]
+        try:
+            out=[]
+            for raw in ftp.nlst(path):
+                value=str(raw).strip().rstrip('/')
+                name=os.path.basename(value).strip()
+                if not name or name in ('.','..'):continue
+                out.append(name)
+            return out
         except Exception:return []
     def _read(self,ftp,path):
         b=BytesIO();ftp.retrbinary('RETR '+path,b.write);return b.getvalue()
@@ -108,7 +115,7 @@ class PS3FTPProvider(ConsoleProvider):
                 diagnostics['mms_db']['metadata_db_hdd']={'parsed':False,'error':f'{type(e).__name__}: {e}'}
 
             # Installed package content, including PS1/PS2 Classics and PSP packages.
-            root='/dev_hdd0/game';names=self._names(ftp,root);diagnostics['paths'][root]=len(names)
+            root='/dev_hdd0/game';names=[n for n in self._names(ftp,root) if n.strip() not in ('','.','..')];diagnostics['paths'][root]=len(names)
             targets={'NPUI94240','NPUI94451','SLES54819'}
             diagnostics['hdd_game']={'folders':len(names),'sfo_parsed':0,'sfo_failed':0,'failed_sfo':[],'target_ids':{},'category_counts':{}}
             for name in names:

@@ -1,4 +1,4 @@
-# GameVault v1.2.0-dev27
+# GameVault v1.2.0-dev28
 
 ## PS4 installed-game filter refined
 The GoldHEN `app.db` provider now treats a row as an installed PS4 game only when all of these are true:
@@ -61,3 +61,11 @@ The scan diagnostics now break ignored rows down by invalid CUSA, non-game UI ca
 - Verifies the required Common/Game fields from the real schema and reports exact title-ID occurrences and offsets.
 - No longer emits guessed MMS titles, original-ID relationships, paths or versions.
 - Full object-page decoding is deliberately the next parser stage; MMS remains diagnostic-only until records can be decoded by schema-defined layouts.
+
+
+#### dev28 PS3 definitive unknown diagnostics and MMS page mapping
+- Robustly removes empty, dot and dot-dot FTP pseudo entries and re-filters `/dev_hdd0/game` before SFO processing.
+- `unknown_items` is now populated exactly at the final no-match branch so its length tracks the `unknown` counter.
+- MMS diagnostics are compact: schema field inventory is summarized instead of dumping every field.
+- Adds structural 0x2000-byte page mapping for `metadata_db_hdd`, including total pages and target pages for the three known IDs.
+- Keeps MMS object values diagnostic-only until schema-defined object records are decoded reliably.

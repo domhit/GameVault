@@ -55,7 +55,8 @@ def parse_metadata_db_hdd(data:bytes,schema:bytes):
     return {'records':[],'diagnostics':{
         'parser_mode':'schema_structural','bytes':len(data),
         'id_occurrences':len(occurrences),'unique_ids':len(unique),
-        'schema':schema_info,'targets':targets,
+        'schema':{'mode':schema_info['mode'],'classes':schema_info['classes'],'required_game_fields':schema_info['required_game_fields'],'all_required_fields_present':schema_info['all_required_fields_present'],'field_count':len(schema_info['fields'])},'targets':targets,
+        'page_analysis':{'page_size':0x2000,'total_pages':len(data)//0x2000,'aligned_bytes':(len(data)//0x2000)*0x2000,'tail_bytes':len(data)%0x2000,'target_pages':{tid:sorted({off//0x2000 for off in info.get('offsets',[])}) for tid,info in targets.items()}},
         'records_decoded':0,
-        'status':'schema loaded; unsafe proximity heuristics disabled; object-page decoding required'
+        'status':'schema loaded; proximity heuristics disabled; 0x2000 page mapping active; object-record decoding pending'
     }}
