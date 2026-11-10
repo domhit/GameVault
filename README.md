@@ -1,4 +1,4 @@
-# GameVault v1.2.0-dev26
+# GameVault v1.2.0-dev27
 
 ## PS4 installed-game filter refined
 The GoldHEN `app.db` provider now treats a row as an installed PS4 game only when all of these are true:
@@ -52,3 +52,12 @@ The scan diagnostics now break ignored rows down by invalid CUSA, non-game UI ca
 - Reports the exact folder/path/error for failed PARAM.SFO files.
 - Removes `.` and `..` from MMS diagnostics.
 - Keeps metadata_db_hdd diagnostic-only; plus/system remain ignored.
+
+
+#### dev27 PS3 scan cleanup and structural MMS parser foundation
+- Filters `.` and `..` globally from FTP directory listings, so false PARAM.SFO failures disappear.
+- Adds detailed `unknown_items` and `homebrew_items` output with title, identifiers, category, platform, path and source.
+- Replaces the unsafe nearby-string MMS record heuristic with a schema-driven foundation using `/dev_hdd0/mms/db/md_schema.scm`.
+- Verifies the required Common/Game fields from the real schema and reports exact title-ID occurrences and offsets.
+- No longer emits guessed MMS titles, original-ID relationships, paths or versions.
+- Full object-page decoding is deliberately the next parser stage; MMS remains diagnostic-only until records can be decoded by schema-defined layouts.

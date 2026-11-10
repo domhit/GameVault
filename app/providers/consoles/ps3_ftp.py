@@ -100,7 +100,8 @@ class PS3FTPProvider(ConsoleProvider):
             # dev25: read and diagnostically parse only metadata_db_hdd. plus/system are intentionally ignored.
             try:
                 mms_raw=self._read(ftp,f'{MMS_DB_ROOT}/metadata_db_hdd')
-                mms=parse_metadata_db_hdd(mms_raw)
+                schema_raw=self._read(ftp,f'{MMS_DB_ROOT}/md_schema.scm')
+                mms=parse_metadata_db_hdd(mms_raw,schema_raw)
                 diagnostics['mms_db']['metadata_db_hdd']={'parsed':True,**mms['diagnostics']}
                 diagnostics['mms_db']['metadata_db_hdd']['sample_records']=mms['records'][:20]
             except Exception as e:

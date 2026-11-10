@@ -1,9 +1,15 @@
-import re, struct
+import re
 
 TITLE_ID_RE=re.compile(rb'(?:NP[A-Z]{2}|[BNSU][A-Z]{3}|SC[A-Z]{2}|SL[A-Z]{2})\d{5}')
 TARGETS={'NPUI94240','NPUI94451','SLES54819'}
+REQUIRED_GAME_FIELDS=(
+    'Common.title','Common.titleForSort','Common.fileName','Common.dirPath',
+    'Common.timeCreated','Common.timeModified','Common.stat.timeLastUsed',
+    'Game.titleId','Game.subTitleId','Game.version','Game.category',
+    'Game.gameCategory','Game.timeModified'
+)
 
-def _strings(blob, minimum=3):
+def _ascii_strings(blob, minimum=3):
     out=[];start=None
     for i,b in enumerate(blob+b'\x00'):
         if 32 <= b <= 126:
@@ -13,52 +19,43 @@ def _strings(blob, minimum=3):
             start=None
     return out
 
-def _near_strings(data, offset, before=1700, after=2400):
-    lo=max(0,offset-before);hi=min(len(data),offset+after)
-    return [(lo+o,s) for o,s in _strings(data[lo:hi])]
+def parse_schema(schema:bytes):
+    strings=_ascii_strings(schema)
+    fields=[]
+    seen=set()
+    for offset,value in strings:
+        if '.' not in value:continue
+        value=value.lstrip(';,|abcdefghijklmnopqrstuvwxyz') if not value.startswith(('Common.','Game.')) else value
+        m=re.search(r'(Common|Game)\.[A-Za-z0-9_.]+',value)
+        if not m:continue
+        name=m.group(0).rstrip('.')
+        if name not in seen:
+            seen.add(name);fields.append({'name':name,'schema_offset':offset})
+    available={x['name'] for x in fields}
+    return {
+        'mode':'schema_structural',
+        'classes':sorted({x['name'].split('.',1)[0] for x in fields}),
+        'fields':fields,
+        'required_game_fields':{name:name in available for name in REQUIRED_GAME_FIELDS},
+        'all_required_fields_present':all(name in available for name in REQUIRED_GAME_FIELDS),
+    }
 
-def _looks_id(s):return bool(re.fullmatch(r'[A-Z]{4}\d{5}',s or ''))
-def _clean(s):
-    s=re.sub(r'^[^A-Za-z0-9]+','',s or '').strip()
-    return s
-
-def _looks_title(s):
-    s=_clean(s)
-    if not s or len(s)<2 or len(s)>180:return False
-    if _looks_id(s) or s.startswith(('/', '_INST_', '_GDATA_','00')):return False
-    if re.fullmatch(r'[0-9.]+',s):return False
-    return any(c.isalpha() for c in s) and not s.lower().endswith(('.sprx','.self','.edat'))
-
-def parse_metadata_db_hdd(data:bytes):
-    ids=[]
+def parse_metadata_db_hdd(data:bytes,schema:bytes):
+    schema_info=parse_schema(schema)
+    occurrences=[]
     for m in TITLE_ID_RE.finditer(data):
-        tid=m.group().decode('ascii','replace')
-        ids.append((m.start(),tid))
-    unique={};records=[]
-    for off,tid in ids:
-        near=_near_strings(data,off)
-        # The proprietary MMS record keeps related printable fields close together.
-        # This is deliberately diagnostic/heuristic in dev25, not an authoritative import parser.
-        prev=[(p,s) for p,s in near if p<off]
-        nxt=[(p,s) for p,s in near if p>off]
-        original=next((s for p,s in reversed(prev) if _looks_id(s) and s!=tid),None)
-        if original is None:original=next((s for p,s in nxt[:20] if _looks_id(s) and s!=tid),None)
-        path=next((s for p,s in nxt if s.startswith('/dev_')),None)
-        versions=[s for p,s in prev[-20:]+nxt[:20] if re.fullmatch(r'\d{1,3}(?:\.\d{1,4})+',s)]
-        title=None
-        # Prefer repeated title strings after dirPath; these are common in Game records.
-        candidates=[_clean(s) for p,s in nxt if _looks_title(s)]
-        for s in candidates:
-            if sum(1 for _,x in nxt if x==s)>=2:title=s;break
-        if title is None:title=next(iter(candidates),None)
-        rec={'title_id':tid,'offset':off,'title':title,'original_id':original,'dir_path':path,'versions':versions[:4]}
-        old=unique.get(tid)
-        score=lambda r:sum(bool(r.get(k)) for k in ('title','original_id','dir_path'))
-        if old is None or score(rec)>score(old):unique[tid]=rec
-    records=list(unique.values())
-    return {'records':records,'diagnostics':{
-        'bytes':len(data),'id_occurrences':len(ids),'unique_ids':len(records),
-        'with_title':sum(bool(x.get('title')) for x in records),'with_original_id':sum(bool(x.get('original_id')) for x in records),
-        'with_dir_path':sum(bool(x.get('dir_path')) for x in records),
-        'targets':{t:next((x for x in records if x['title_id']==t),{'title_id':t,'found':False}) for t in sorted(TARGETS)}
+        occurrences.append({'title_id':m.group().decode('ascii','replace'),'offset':m.start()})
+    unique=sorted({x['title_id'] for x in occurrences})
+    targets={}
+    for tid in sorted(TARGETS):
+        hits=[x['offset'] for x in occurrences if x['title_id']==tid]
+        targets[tid]={'title_id':tid,'found':bool(hits),'occurrences':len(hits),'offsets':hits[:20]}
+    # dev27 intentionally does not infer titles, relations, paths or versions from nearby strings.
+    # Those values must only be emitted after page/region/object layouts from md_schema.scm are decoded.
+    return {'records':[],'diagnostics':{
+        'parser_mode':'schema_structural','bytes':len(data),
+        'id_occurrences':len(occurrences),'unique_ids':len(unique),
+        'schema':schema_info,'targets':targets,
+        'records_decoded':0,
+        'status':'schema loaded; unsafe proximity heuristics disabled; object-page decoding required'
     }}
