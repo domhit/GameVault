@@ -1,4 +1,4 @@
-# GameVault v1.2.0-dev29
+# GameVault v1.2.0-dev30
 
 ## PS4 installed-game filter refined
 The GoldHEN `app.db` provider now treats a row as an installed PS4 game only when all of these are true:
@@ -75,3 +75,11 @@ The scan diagnostics now break ignored rows down by invalid CUSA, non-game UI ca
 - Known launchers, placeholders, configuration databases and add-on content no longer count as unknown games.
 - Profiles MMS target pages 422 and 424 structurally: page headers, integer views, occupancy, contained IDs and target offsets.
 - MMS remains diagnostic-only; no guessed field assignment or database import is performed.
+
+
+#### dev30 PS3 MMS cross-page layout analyzer
+- Expands structural MMS analysis to adjacent pages around each target page.
+- Builds a 1024-byte-before / 2048-byte-after window for NPUI94240, NPUI94451 and SLES54819, even when data crosses page boundaries.
+- Reports every printable string and title ID relative to the target package ID.
+- Compares SCUS94240→NPUI94240 and SCUS94451→NPUI94451 offsets and marks layouts consistent only within a 16-byte tolerance.
+- No MMS fields are imported or guessed; schema record-slot decoding remains pending.
