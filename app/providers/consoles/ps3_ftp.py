@@ -113,9 +113,15 @@ class PS3FTPProvider(ConsoleProvider):
                 idx_raw=self._read(ftp,f'{MMS_DB_ROOT}/metadata_db_hdd.idx')
                 schema_raw=self._read(ftp,f'{MMS_DB_ROOT}/md_schema.scm')
                 mms=parse_metadata_db_hdd(mms_raw,schema_raw,idx_raw)
-                diagnostics['mms_db']['metadata_db_hdd']={'parsed':True,**mms['diagnostics']}
-                diagnostics['mms_db']['metadata_db_hdd']['sample_records']=mms['records'][:20]
-                diagnostics['mms_db']['metadata_db_hdd']['history_records']=mms['records']
+                records=mms.get('records',[]);started=[x for x in records if int(x.get('play_count') or 0)>0]
+                diagnostics['mms_db']['metadata_db_hdd']={
+                    'parsed':True,'parser_mode':mms['diagnostics'].get('parser_mode'),
+                    'bytes':mms['diagnostics'].get('bytes'),'index':mms['diagnostics'].get('index'),
+                    'schema':mms['diagnostics'].get('schema'),'records_decoded':len(records),
+                    'confirmed_started':len(started),'without_confirmed_start':len(records)-len(started),
+                    'status':mms['diagnostics'].get('status'),
+                    'history_records':records
+                }
             except Exception as e:
                 diagnostics['mms_db']['metadata_db_hdd']={'parsed':False,'error':f'{type(e).__name__}: {e}'}
 
@@ -155,18 +161,21 @@ class PS3FTPProvider(ConsoleProvider):
                 found.append(InstalledTitle('PlayStation 3',ident,title,None,'PS3 ISO','FTP ISO',f'{root}/{name}',storage='dev_hdd0'))
 
         history={}
-        for row in mms.get('records',[]):
-            for k in (row.get('title_id'),row.get('original_title_id')):
-                if k:history[str(k).replace('-','').replace('_','').upper()]=row
-        item_rows=[]
+        for h in mms.get('records',[]):
+            for k in (h.get('title_id'),h.get('original_title_id')):
+                if k:history[str(k).replace('-','').replace('_','').upper()]=h
+        item_rows=[];history_matched=set()
         for item in found:
-            row=item.to_dict();ident=str(row.get('identifier') or '').replace('-','').replace('_','').upper()
-            hist=history.get(ident)
+            row=item.to_dict();ident=str(row.get('identifier') or '').replace('-','').replace('_','').upper();hist=history.get(ident)
             if hist:
-                row['play_count']=hist.get('play_count');row['last_played_at']=hist.get('last_played_at');row['mms_json']=hist
+                confirmed=int(hist.get('play_count') or 0)>0
+                row['play_count']=hist.get('play_count');row['last_played_at']=hist.get('last_played_at') if confirmed else None
+                row['mms_timestamp_at']=hist.get('last_played_at');row['mms_json']=hist;history_matched.add(hist.get('title_id'))
                 row['source']=(row.get('source') or 'PS3')+' + PS3 MMS'
             item_rows.append(row)
             diagnostics['categories'][item.category or item.content_type or 'Unknown']=diagnostics['categories'].get(item.category or item.content_type or 'Unknown',0)+1
             diagnostics['platforms'][item.platform]=diagnostics['platforms'].get(item.platform,0)+1
+        if diagnostics.get('mms_db',{}).get('metadata_db_hdd'):
+            md=diagnostics['mms_db']['metadata_db_hdd'];md['inventory_matched']=len(history_matched);md['inventory_unmatched']=len(mms.get('records',[]))-len(history_matched)
         diagnostics['mms_db']['files'].sort(key=lambda x:x['name'].casefold())
         return {'items':item_rows,'diagnostics':diagnostics}
