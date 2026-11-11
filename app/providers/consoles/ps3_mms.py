@@ -104,6 +104,8 @@ def _decode_game_record(data,marker,index):
     if not re.fullmatch(r'(?:[A-Z]{4}\d{5}|NP[A-Z]{2}\d{5})',original or ''):return None
     package=_heap_string(data,base,4)
     title=_heap_string(data,base,2)
+    title_for_sort=_heap_string(data,base,3)
+    file_name=package
     if title:
         title=re.sub(r'[®™](?=\d)', ' ', title);title=title.replace('®','').replace('™','').strip()
     dir_path=_heap_string(data,base,5)
@@ -111,7 +113,7 @@ def _decode_game_record(data,marker,index):
     if index is not None and package.encode() not in index:return None
     if not title or not dir_path:return None
     raw_last=data[base+0x7c:base+0x84]
-    return {'title_id':package,'original_title_id':original,'title':title,'dir_path':dir_path,
+    return {'record_type':'GameHistory','title_id':package,'original_title_id':original,'title':title,'title_for_sort':title_for_sort,'file_name':file_name,'dir_path':dir_path,
             'play_count':struct.unpack_from('>I',data,base+0x78)[0],
             'last_played_raw':raw_last.hex(),'last_played_at':_rtc8(raw_last),
             'last_played_source_field':'Common.stat.timeLastUsed',
