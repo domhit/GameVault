@@ -1,25 +1,15 @@
-# GameVault v1.2.0-dev34
+# GameVault v1.2.0-dev35
 
-## Unified responsive library wall
-- Desktop split view is replaced by a responsive game wall using the full available width.
-- Game cards keep a large cover plus title and platform metadata; they are not reduced to bare covers.
-- The grid uses automatic columns on desktop/tablet and two compact columns on phones.
-- Search, platform selection, metadata filters, counts, console/platform tiles, selection state, updates, resolver/admin features and all backend functionality remain intact.
+## Desktop game-wall fixes
+- Restores normal browser/document scrolling for the full cover wall.
+- Removes the old 1500 px shell cap; the library now uses the full available viewport width with only a small responsive outer margin.
+- Desktop card grid uses `auto-fill` across the entire viewport, so wide/ultrawide screens gain additional columns instead of stopping around seven.
+- Search/filter bar remains sticky while the document scrolls.
+- Library scroll position is stored/restored through the actual document scrolling element.
 
-## Game-mode icons on cards
-Cards show compact icons only when metadata positively confirms a capability:
-- 👤 Singleplayer
-- 👥 local multiplayer
-- ▣ split-screen
-- 🤝 local/couch co-op
-- 🌐 online multiplayer
-Unknown capabilities display no icon rather than guessing.
-
-## One shared detail view for desktop and mobile
-- Clicking a card opens the existing full detail content in a large responsive overlay.
-- No detail information was removed: metadata, value, quality, description, multiplayer, installations, versions, sizes, PS3 history, TU/DLC, packages and admin actions remain.
-- Sticky header: **Zurück**, current game title, platform.
-- Sticky footer: **Vorheriges**, **Für meine Konsole vormerken / ✓ Vorgemerkt**, **Nächstes**.
-- Previous/next follow the current filtered/search result list, not the full library.
-- Closing the detail restores the previous library scroll position without rerendering the user back to the top.
-- Browser/Android Back closes the detail overlay first.
+## Mobile portrait detail fullscreen fix
+- The shared game detail overlay explicitly owns `100vw × 100dvh` on phones, independent of inherited dialog/detail sizing.
+- Overlay and shell are pinned to `inset: 0`, with all max-width/max-height restrictions removed in the mobile breakpoint.
+- Portrait hero/information layouts are forced to use the full content width.
+- Landscape behavior remains fullscreen and responsive.
+- Sticky detail header/footer and Previous / Mark for console / Next navigation are unchanged.
