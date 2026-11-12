@@ -1,15 +1,20 @@
-# GameVault v1.2.0-dev35
+# GameVault v1.2.0-dev36
 
-## Desktop game-wall fixes
-- Restores normal browser/document scrolling for the full cover wall.
-- Removes the old 1500 px shell cap; the library now uses the full available viewport width with only a small responsive outer margin.
-- Desktop card grid uses `auto-fill` across the entire viewport, so wide/ultrawide screens gain additional columns instead of stopping around seven.
-- Search/filter bar remains sticky while the document scrolls.
-- Library scroll position is stored/restored through the actual document scrolling element.
+## Mobile portrait width fix
+- The search/filter bar no longer forces the document wider than the phone viewport.
+- On phones the search field occupies a full row, platform/metadata selectors share a second row, and the result count occupies its own compact row.
+- Every grid/container/card is explicitly constrained with `min-width: 0` / `max-width: 100%`.
+- Portrait keeps exactly two game columns, with both columns fully visible and long titles wrapping inside their card.
+- Horizontal overflow is disabled only at the page level; normal vertical scrolling remains unchanged.
 
-## Mobile portrait detail fullscreen fix
-- The shared game detail overlay explicitly owns `100vw × 100dvh` on phones, independent of inherited dialog/detail sizing.
-- Overlay and shell are pinned to `inset: 0`, with all max-width/max-height restrictions removed in the mobile breakpoint.
-- Portrait hero/information layouts are forced to use the full content width.
-- Landscape behavior remains fullscreen and responsive.
-- Sticky detail header/footer and Previous / Mark for console / Next navigation are unchanged.
+## Detail child-dialog stacking fix
+- The shared detail overlay remains at z-index 250.
+- Editor, IGDB, resolver/trace, confirmation and managed dialogs now render at z-index 420-440.
+- Global busy indicator uses z-index 500.
+- Therefore **Metadaten bearbeiten**, **IGDB suchen** and **Alle Resolver ausführen** correctly open above the game detail view instead of behind it.
+
+## Retained dev35 layout fixes
+- Full-width desktop game wall with normal document scrolling.
+- Sticky search/filter bar.
+- True 100vw × 100dvh mobile detail view.
+- Previous / mark-for-console / next footer and scroll-position restoration remain unchanged.
