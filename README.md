@@ -1,17 +1,17 @@
-# GameVault v1.2.0
+# GameVault v1.3.0-dev1
 
 GameVault is a self-hosted game collection, backup inventory and console-inventory application. It runs as a FastAPI web application with PostgreSQL persistence and is designed for Docker/Portainer deployments.
 
-## v1.2.0 release-candidate scope
+## v1.3.0 development
 
-v1.2.0 is the Sony + Xbox console-inventory milestone. The release candidate supports:
+v1.3.0-dev1 starts the Nintendo console-inventory development line on top of the validated v1.2.0 Sony + Xbox baseline. Existing supported console providers remain:
 
 - PlayStation 3 / CFW + webMAN MOD
 - PlayStation 4 / GoldHEN
 - Xbox 360 / Aurora
 - Xbox Classic / XBMC4Gamers
 
-Nintendo providers are intentionally deferred to the next development branch after v1.2.0 stable.
+Current v1.3 development targets Nintendo Switch / Atmosphere, Wii U CFW and Nintendo 3DS CFW. dev1 only establishes the new development/version/workflow baseline; Nintendo provider implementation follows in subsequent development builds.
 
 ## User interface
 
@@ -150,10 +150,10 @@ Console credentials are currently stored in PostgreSQL. Prefer anonymous/read-on
 The included GitHub Actions workflow currently builds:
 
 - `main` -> `ghcr.io/domhit/gamevault:latest`
-- `develop-v1.1` -> `ghcr.io/domhit/gamevault:dev`
+- `develop-v1.3` -> `ghcr.io/domhit/gamevault:dev`
 - `v*` tags -> matching version tag
 
-After v1.2.0 stable, development should move to a new Nintendo-focused branch rather than continuing the legacy `develop-v1.1` name.
+v1.3 development now runs on `develop-v1.3`; `main` remains the stable release line.
 
 ## Known limitations
 
@@ -162,4 +162,4 @@ After v1.2.0 stable, development should move to a new Nintendo-focused branch ra
 - PS3 network ISO size is not measurable through PS3 FTP; webMAN/ps3netsrv still provides availability.
 - Aurora RecentGames can retain ContentIds no longer present in the current `content.db`; those events stay unmapped.
 - Console credentials are not encrypted at rest in the current release candidate.
-- Nintendo Switch, Wii U and Nintendo 3DS providers are not part of v1.2.0.
+- Nintendo Switch, Wii U and Nintendo 3DS providers are the v1.3 development target and are not implemented in dev1 yet.

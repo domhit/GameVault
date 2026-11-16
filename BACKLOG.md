@@ -1,14 +1,12 @@
-# GameVault Backlog after v1.2.0
+# GameVault Backlog - v1.3 development
 
-## v1.2.0 release gate
+## Stable baseline
 
-- Complete RC acceptance checklist.
-- Merge validated RC to `main` and tag `v1.2.0`.
-- Do not add additional console-provider scope before stable.
+v1.2.0 is the validated Sony + Xbox stable baseline on `main`. v1.3 work happens on `develop-v1.3`.
 
 ## v1.3 - Nintendo console inventory
 
-Start a new Nintendo-focused development branch after v1.2.0 stable.
+Active branch: `develop-v1.3`.
 
 Target environments:
 - Nintendo Switch / Atmosphere
