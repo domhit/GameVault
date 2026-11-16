@@ -170,6 +170,6 @@ class PS3FTPProvider(ConsoleProvider):
             item_rows.append(row)
             diagnostics['categories'][item.category or item.content_type or 'Unknown']=diagnostics['categories'].get(item.category or item.content_type or 'Unknown',0)+1;diagnostics['platforms'][item.platform]=diagnostics['platforms'].get(item.platform,0)+1
         if diagnostics.get('mms_db',{}).get('metadata_db_hdd'):
-            md=diagnostics['mms_db']['metadata_db_hdd'];md['inventory_matched']=len(history_matched);md['inventory_unmatched']=max(0,len(history)-len(history_matched));md['aggregate_title_ids']=len(history);md['game_data_titles']=sum(1 for x in history.values() if x.get('has_game_data'));md['updated_titles']=sum(1 for x in history.values() if x.get('installed_patch_version'))
+            md=diagnostics['mms_db']['metadata_db_hdd'];md['inventory_matched']=len(history_matched);md['inventory_unmatched']=max(0,len(history)-len(history_matched));record_ids={str(r.get('title_id') or '') for r in records if r.get('title_id')};md['unique_record_title_ids']=len(record_ids);md['aggregate_lookup_keys']=len(history);md['alias_keys']=max(0,len(history)-len(record_ids));md['game_data_titles']=sum(1 for x in history.values() if x.get('has_game_data'));md['updated_titles']=sum(1 for x in history.values() if x.get('installed_patch_version'))
         diagnostics['mms_db']['files'].sort(key=lambda x:x['name'].casefold())
         return {'items':item_rows,'diagnostics':diagnostics}
