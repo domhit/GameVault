@@ -40,17 +40,8 @@ class XBMC4GamersProvider(ConsoleProvider):
     if not title or not tid:continue
     size=int(r['iSize'] or 0) if str(r['iSize'] or '').lstrip('-').isdigit() else None
     item=InstalledTitle('Xbox Classic',tid,title,None,'Xbox Classic','XBMC4Gamers MyPrograms',fn,category='Xbox Classic',storage=(fn.split(':',1)[0] if ':' in fn else 'Xbox'),file_size=None).to_dict()
-    play_count=int(r['iTimesPlayed'] or 0);last_played=str(r['last_played'] or '').strip() or None
-    last_accessed_raw=int(r['lastAccessed'] or 0)
-    last_accessed_at=None
-    if last_accessed_raw:
-     try:last_accessed_at=(datetime.datetime(1601,1,1,tzinfo=datetime.timezone.utc)+datetime.timedelta(microseconds=last_accessed_raw/10)).isoformat()
-     except Exception:pass
-    item['play_count']=play_count
-    item['last_played_at']=last_played if play_count>0 and last_played else None
-    item['last_accessed_at']=last_accessed_at
-    item['history_source']='XBMC4Gamers'
-    item['history_raw_json']={'iTimesPlayed':play_count,'last_played':last_played,'lastAccessed':last_accessed_raw}
+    play_count=int(r['iTimesPlayed'] or 0);last_played=str(r['last_played'] or '').strip() or None;raw_access=int(r['lastAccessed'] or 0);last_access=(datetime.datetime(1601,1,1,tzinfo=datetime.timezone.utc)+datetime.timedelta(microseconds=raw_access/10)).isoformat() if raw_access else None
+    item['play_count']=play_count;item['last_played_at']=last_played if play_count>0 and last_played else None;item['last_accessed_at']=last_access;item['history_source']='XBMC4Gamers';item['history_raw_json']={'iTimesPlayed':play_count,'last_played':last_played,'lastAccessed':raw_access}
     item['installed_size_bytes']=size;item['metadata_hint']={'developer':r['developer'],'publisher':r['publisher'],'genres':r['genre'],'release_date':r['release_date'],'description':r['synopsis'],'features_general':r['features_general'],'features_online':r['features_online']}
     items.append(item);diag['games']+=1
    con.close()

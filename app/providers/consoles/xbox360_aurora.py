@@ -1,6 +1,6 @@
 from ftplib import FTP
 from io import BytesIO
-import os, re, sqlite3, tempfile, requests
+import os, re, sqlite3, tempfile, requests, datetime
 from .base import ConsoleProvider, InstalledTitle
 
 DB_CANDIDATES=(
@@ -12,6 +12,11 @@ GROUP_NAMES={1:'Xbox 360 Game',2:'XBLA',4:'Xbox Classic',5:'Homebrew'}
 def tid_hex(v):
  try:return f'{int(v) & 0xFFFFFFFF:08X}'
  except:return None
+
+def filetime_iso(v):
+ try:
+  n=int(v or 0);return (datetime.datetime(1601,1,1,tzinfo=datetime.timezone.utc)+datetime.timedelta(microseconds=n/10)).isoformat() if n else None
+ except Exception:return None
 
 def version_text(base,version=None):
  try:
@@ -123,7 +128,7 @@ class AuroraProvider(ConsoleProvider):
     if progress:progress(i,len(records),row)
   return results
  def scan(self):
-  items=[];diag={'databases':[],'errors':[],'content_items':0,'title_updates':0,'scan_paths':[],'content_counts':{},'ignored_homebrew':0}
+  items=[];diag={'databases':[],'errors':[],'content_items':0,'title_updates':0,'scan_paths':[],'content_counts':{},'ignored_homebrew':0,'recent_games':{'rows':0,'mapped':0,'unmapped':0,'profiles':{}}};content_id_to_tid={};recent_by_tid={};recent_raw=[]
   with self.connect() as ftp:
    dbs=self._discover_dbs(ftp);diag['databases']=dbs
    for dbpath in dbs:
@@ -136,7 +141,7 @@ class AuroraProvider(ConsoleProvider):
       # One game row per TitleID/group. Multi-disc rows are collapsed, while their paths remain visible.
       games={}
       for r in rows:
-       group=int(r['ContentGroup'] or 0);kind=GROUP_NAMES.get(group)
+       group=int(r['ContentGroup'] or 0);kind=GROUP_NAMES.get(group);content_id_to_tid[int(r['Id'])]=tid_hex(r['TitleId'])
        if kind=='Homebrew' or kind is None:diag['ignored_homebrew']+=1;continue
        tid=tid_hex(r['TitleId']);title=str(r['TitleName'] or '').strip()
        if not tid or not title:continue
@@ -157,23 +162,18 @@ class AuroraProvider(ConsoleProvider):
      if dbpath.lower().endswith('settings.db') and 'ScanPaths' in tables:
       diag['scan_paths']=[dict(x) for x in con.execute('select Id,Path,Depth,ScriptData,OptionsFlag from ScanPaths order by Id').fetchall()]
      if dbpath.lower().endswith('settings.db') and 'UserRecentGames' in tables:
-      recent_rows=con.execute('select Id,DateTime,ContentId,ProfileId from UserRecentGames order by DateTime desc').fetchall();diag['recent_games']['rows']+=len(recent_rows);diag['_recent_raw']=[dict(x) for x in recent_rows]
+      recent_raw=[dict(x) for x in con.execute('select Id,DateTime,ContentId,ProfileId from UserRecentGames order by DateTime desc').fetchall()];diag['recent_games']['rows']=len(recent_raw)
     except Exception as e:diag['errors'].append(f'{dbpath}: {type(e).__name__}: {e}')
     finally:
      con.close()
      try:os.unlink(tmp)
      except Exception:pass
-  for rr in diag.pop('_recent_raw',[]):
-   profile=str(rr.get('ProfileId') or '');diag['recent_games']['profiles'][profile]=diag['recent_games']['profiles'].get(profile,0)+1
-   tid=content_id_to_tid.get(int(rr.get('ContentId') or 0))
-   if not tid:diag['recent_games']['unmapped']+=1;continue
-   when=filetime_iso(rr.get('DateTime'))
-   if not when:diag['recent_games']['unmapped']+=1;continue
-   diag['recent_games']['mapped']+=1;old=recent_by_tid.get(tid);raw={'content_id':int(rr.get('ContentId') or 0),'profile_id':profile,'filetime':int(rr.get('DateTime') or 0),'event_id':rr.get('Id')}
-   if not old or when>old['last_played_at']:recent_by_tid[tid]={'last_played_at':when,'history_profile_id':profile,'history_raw_json':raw}
+  for rr in recent_raw:
+   profile=str(rr.get('ProfileId') or '');diag['recent_games']['profiles'][profile]=diag['recent_games']['profiles'].get(profile,0)+1;tid=content_id_to_tid.get(int(rr.get('ContentId') or 0));when=filetime_iso(rr.get('DateTime'))
+   if not tid or not when:diag['recent_games']['unmapped']+=1;continue
+   diag['recent_games']['mapped']+=1;old=recent_by_tid.get(tid)
+   if not old or when>old['last_played_at']:recent_by_tid[tid]={'last_played_at':when,'history_profile_id':profile,'history_raw_json':{'content_id':rr.get('ContentId'),'profile_id':profile,'filetime':rr.get('DateTime'),'event_id':rr.get('Id')}}
   for item in items:
-   if item.get('platform')=='Xbox 360' and item.get('category') in ('Xbox 360 Game','XBLA'):
-    hist=recent_by_tid.get(item.get('identifier'))
-    if hist:item.update(hist);item['history_source']='Aurora UserRecentGames'
+   if item.get('platform')=='Xbox 360' and item.get('category') in ('Xbox 360 Game','XBLA') and item.get('identifier') in recent_by_tid:item.update(recent_by_tid[item['identifier']]);item['history_source']='Aurora UserRecentGames'
   diag['deduplicated_items']=len(items)
   return {'items':items,'diagnostics':diag}
