@@ -90,6 +90,11 @@ def _heap_string(data,base,slot):
     value=data[base+off+4:base+off+length].split(b'\0',1)[0]
     return value.decode('utf-8','replace') if value else None
 
+def _heap_field(data,base,record_offset):
+    return _heap_string(data,base,(record_offset-0x125)//4) if record_offset>=0x125 else None
+def _version_key(v):
+    n=re.findall(r'\d+',str(v or ''));return tuple(int(x) for x in n) if n else ()
+
 def _rtc8(raw):
     if len(raw)!=8 or raw==b'\0'*8:return None
     year=struct.unpack('>H',raw[:2])[0];month,day,reserved,hour,minute,second=raw[2:]
@@ -97,36 +102,36 @@ def _rtc8(raw):
     return f'{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}+00:00'
 
 def _decode_game_record(data,marker,index):
-    # The reflected record base is marker+2. This maps Game.titleId schema offset 0xDD
-    # to the observed fixed field at marker+0xDF and Common.stat.* to 0x78/0x7C.
-    base=marker+2
-    original=_read_cstr(data,base+0xdd,16)
+    base=marker+2;original=_read_cstr(data,base+0xdd,16)
     if not re.fullmatch(r'(?:[A-Z]{4}\d{5}|NP[A-Z]{2}\d{5})',original or ''):return None
-    package=_heap_string(data,base,4)
-    title=_heap_string(data,base,2)
-    if title:
-        title=re.sub(r'[®™](?=\d)', ' ', title);title=title.replace('®','').replace('™','').strip()
-    dir_path=_heap_string(data,base,5)
+    package=_heap_string(data,base,4);title=_heap_string(data,base,2);dir_path=_heap_string(data,base,5)
     if not package or not re.fullmatch(r'(?:[A-Z]{4}\d{5}|NP[A-Z]{2}\d{5})',package):return None
     if index is not None and package.encode() not in index:return None
     if not title or not dir_path:return None
-    raw_last=data[base+0x7c:base+0x84]
-    return {'title_id':package,'original_title_id':original,'title':title,'dir_path':dir_path,
-            'play_count':struct.unpack_from('>I',data,base+0x78)[0],
-            'last_played_raw':raw_last.hex(),'last_played_at':_rtc8(raw_last),
-            'last_played_source_field':'Common.stat.timeLastUsed',
-            'record_marker_offset':marker,'record_base_offset':base,
-            'idx_key_offset':index.find(package.encode()) if index is not None else None}
-
+    if title:title=re.sub(r'[®™](?=\d)',' ',title).replace('®','').replace('™','').strip()
+    raw_last=data[base+0x7c:base+0x84];game_category=struct.unpack_from('>I',data,base+0x119)[0];bootable=struct.unpack_from('>I',data,base+0x109)[0]
+    tmp=_heap_field(data,base,0x1f5);param1=_heap_field(data,base,0x209);role='game_data' if game_category==6000 and bootable==0 and str(tmp or '').startswith('_GDATA_') else ('installed_update' if game_category==6000 and bootable==0 and str(tmp or '').startswith('_INST_') else ('game_data' if game_category==6000 and bootable==0 else 'executable'))
+    return {'title_id':package,'original_title_id':original,'title':title,'dir_path':dir_path,'play_count':struct.unpack_from('>I',data,base+0x78)[0],'last_played_raw':raw_last.hex(),'last_played_at':_rtc8(raw_last),'last_played_source_field':'Common.stat.timeLastUsed','time_modified_common':_rtc8(data[base+0x0c:base+0x14]),'time_modified_game':_rtc8(data[base+0x14:base+0x1c]),'version':_read_cstr(data,base+0xfd,8) or None,'installed_patch_version':param1,'ps3_system_version':_read_cstr(data,base+0x10d,8) or None,'game_category':game_category,'bootable':bootable,'tmp_dir_name':tmp,'record_role':role,'record_marker_offset':marker,'record_base_offset':base,'idx_key_offset':index.find(package.encode()) if index is not None else None}
 def _decode_game_records(data,index):
     records=[];seen=set()
     for m in re.finditer(re.escape(RECORD_MARKER),data):
         row=_decode_game_record(data,m.start(),index)
-        if row and row['title_id'] not in seen:seen.add(row['title_id']);records.append(row)
+        if row and row['record_marker_offset'] not in seen:seen.add(row['record_marker_offset']);records.append(row)
     return records
 
+def aggregate_game_records(records):
+    groups={}
+    for r in records:
+        for k in (r.get('title_id'),r.get('original_title_id')):
+            if k:groups.setdefault(str(k).replace('-','').replace('_','').upper(),{})[r['record_marker_offset']]=r
+    out={}
+    for tid,u in groups.items():
+        rows=list(u.values());exe=[r for r in rows if r['record_role']=='executable'];gd=[r for r in rows if r['record_role'] in ('game_data','installed_update')];confirmed=[r for r in exe if int(r.get('play_count') or 0)>0 and r.get('last_played_at')];hit=max(confirmed,key=lambda r:r['last_played_at']) if confirmed else None;activity=[x for r in gd for x in (r.get('time_modified_common'),r.get('time_modified_game')) if x];patches=[r['installed_patch_version'] for r in gd if r.get('installed_patch_version')]
+        out[tid]={'title_id':tid,'records':rows,'has_game_data':any(r['record_role']=='game_data' for r in gd),'has_installed_update':any(r['record_role']=='installed_update' for r in gd),'base_version':next((r['version'] for r in gd if r.get('version')),None),'installed_patch_version':max(patches,key=_version_key) if patches else None,'ps3_system_version':next((r['ps3_system_version'] for r in gd if r.get('ps3_system_version')),None),'play_count':hit.get('play_count') if hit else None,'last_played_at':hit.get('last_played_at') if hit else (max(activity) if activity else None),'history_source':'PS3 MMS timeLastUsed' if hit else ('PS3 MMS GD/INST timeModified' if activity else None)}
+    return out
+
 def parse_metadata_db_hdd(data:bytes,schema:bytes,index:bytes|None=None):
-    schema_info=parse_schema(schema);idx_info={'provided':index is not None,'bytes':len(index) if index is not None else 0};records=_decode_game_records(data,index);occ=[]
+    schema_info=parse_schema(schema);idx_info={'provided':index is not None,'bytes':len(index) if index is not None else 0};records=_decode_game_records(data,index);aggregates=aggregate_game_records(records);occ=[]
     for m in TITLE_ID_RE.finditer(data):occ.append({'title_id':m.group().decode('ascii','replace'),'offset':m.start()})
     unique=sorted({x['title_id'] for x in occ});targets={}
     for tid in sorted(TARGETS):
@@ -138,7 +143,7 @@ def parse_metadata_db_hdd(data:bytes,schema:bytes,index:bytes|None=None):
     profiles=[_page_profile(data,p,target_offsets) for p in analysis_pages]
     windows={tid:_target_window(data,tid,info['offsets'][0],TARGET_ORIGINALS.get(tid)) for tid,info in targets.items() if info['offsets']}
     comparisons=_compare_targets(windows)
-    return {'records':records,'diagnostics':{
+    return {'records':records,'aggregates':aggregates,'diagnostics':{
         'parser_mode':'schema_structural_cross_page_analyzer','bytes':len(data),'index':idx_info,'id_occurrences':len(occ),'unique_ids':len(unique),
         'schema':{'mode':schema_info['mode'],'classes':schema_info['classes'],'required_game_fields':schema_info['required_game_fields'],
                   'all_required_fields_present':schema_info['all_required_fields_present'],'field_count':len(schema_info['fields'])},

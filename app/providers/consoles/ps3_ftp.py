@@ -160,22 +160,16 @@ class PS3FTPProvider(ConsoleProvider):
                 m=re.search(r'([A-Z]{4}[\-_]?\d{5})',name,re.I);ident=re.sub(r'[^A-Z0-9]','',m.group(1).upper()) if m else None
                 found.append(InstalledTitle('PlayStation 3',ident,title,None,'PS3 ISO','FTP ISO',f'{root}/{name}',storage='dev_hdd0'))
 
-        history={}
-        for h in mms.get('records',[]):
-            for k in (h.get('title_id'),h.get('original_title_id')):
-                if k:history[str(k).replace('-','').replace('_','').upper()]=h
-        item_rows=[];history_matched=set()
+        history=mms.get('aggregates',{});item_rows=[];history_matched=set()
         for item in found:
             row=item.to_dict();ident=str(row.get('identifier') or '').replace('-','').replace('_','').upper();hist=history.get(ident)
             if hist:
-                confirmed=int(hist.get('play_count') or 0)>0
-                row['play_count']=hist.get('play_count');row['last_played_at']=hist.get('last_played_at') if confirmed else None
-                row['mms_timestamp_at']=hist.get('last_played_at');row['mms_json']=hist;history_matched.add(hist.get('title_id'))
-                row['source']=(row.get('source') or 'PS3')+' + PS3 MMS'
+                row['play_count']=hist.get('play_count');row['last_played_at']=hist.get('last_played_at');row['history_source']=hist.get('history_source');row['mms_timestamp_at']=hist.get('last_played_at');row['mms_json']=hist
+                if hist.get('installed_patch_version'):row['installed_version']=hist['installed_patch_version']
+                history_matched.add(ident);row['source']=(row.get('source') or 'PS3')+' + PS3 MMS'
             item_rows.append(row)
-            diagnostics['categories'][item.category or item.content_type or 'Unknown']=diagnostics['categories'].get(item.category or item.content_type or 'Unknown',0)+1
-            diagnostics['platforms'][item.platform]=diagnostics['platforms'].get(item.platform,0)+1
+            diagnostics['categories'][item.category or item.content_type or 'Unknown']=diagnostics['categories'].get(item.category or item.content_type or 'Unknown',0)+1;diagnostics['platforms'][item.platform]=diagnostics['platforms'].get(item.platform,0)+1
         if diagnostics.get('mms_db',{}).get('metadata_db_hdd'):
-            md=diagnostics['mms_db']['metadata_db_hdd'];md['inventory_matched']=len(history_matched);md['inventory_unmatched']=len(mms.get('records',[]))-len(history_matched)
+            md=diagnostics['mms_db']['metadata_db_hdd'];md['inventory_matched']=len(history_matched);md['inventory_unmatched']=max(0,len(history)-len(history_matched));md['aggregate_title_ids']=len(history);md['game_data_titles']=sum(1 for x in history.values() if x.get('has_game_data'));md['updated_titles']=sum(1 for x in history.values() if x.get('installed_patch_version'))
         diagnostics['mms_db']['files'].sort(key=lambda x:x['name'].casefold())
         return {'items':item_rows,'diagnostics':diagnostics}
