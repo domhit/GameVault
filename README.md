@@ -1,9 +1,8 @@
-# GameVault v1.2.0-dev37
+# GameVault v1.2.0-dev38
 
-## IGDB ratings
-- Stores and displays IGDB user rating (`rating`) + vote count.
-- Stores and displays IGDB critic rating (`aggregated_rating`) + review count.
-- Existing IGDB refresh/direct/manual assignment workflows refresh these fields too.
-
-## Enter-key actions
-Enter now triggers the natural primary action for admin password, IGDB direct ID, manual console-library search, new-game fields, package editor fields, console editor text fields and the metadata editor IGDB ID. Main library search Enter opens the first visible result. Textareas keep normal newline behavior.
+## Cross-platform console play history
+- Xbox 360/Aurora: reads `UserRecentGames`, maps `ContentId -> ContentItems.Id -> TitleId`, decodes FILETIME, keeps newest mapped event per TitleID/profile context, never guesses unmapped historical ContentIds.
+- Xbox Classic/XBMC4Gamers: `iTimesPlayed` becomes play count; `last_played` is confirmed Last Played when count > 0; `lastAccessed` is separately retained after FILETIME conversion.
+- PS4/GoldHEN: valid installed app rows retain `lastAccessTime` as `last_accessed_at`; UI labels it **Zuletzt verwendet** pending exact semantic validation.
+- PS3 MMS semantics remain unchanged.
+- Generic installed history adds `last_accessed_at`, `history_source`, `history_profile_id`, and `history_raw_json`.

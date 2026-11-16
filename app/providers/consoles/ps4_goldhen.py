@@ -35,7 +35,7 @@ class PS4GoldHENProvider(ConsoleProvider):
    tables=[r[0] for r in c.execute("select name from sqlite_master where type='table' and name like 'tbl_appbrowse_%'")]
    if not tables:raise RuntimeError('tbl_appbrowse_* fehlt')
    # Prefer populated/current table with most rows.
-   table=max(tables,key=lambda t:c.execute(f'select count(*) from "{t}"').fetchone()[0]);rows=c.execute(f'select titleId,contentId,titleName,metaDataPath,category,uiCategory,contentSize,installDate,externalHddAppStatus,hddLocation,visible from "{table}"').fetchall();diag['app_db']={'table':table,'rows':len(rows)}
+   table=max(tables,key=lambda t:c.execute(f'select count(*) from "{t}"').fetchone()[0]);rows=c.execute(f'select titleId,contentId,titleName,metaDataPath,category,uiCategory,contentSize,installDate,lastAccessTime,externalHddAppStatus,hddLocation,visible from "{table}"').fetchall();diag['app_db']={'table':table,'rows':len(rows)}
    info={}
    if 'tbl_appinfo' in {r[0] for r in c.execute("select name from sqlite_master where type='table'")}:
     for r in c.execute("select titleId,key,val from tbl_appinfo where key in ('APP_VER','VERSION','TITLE','CONTENT_ID','#_size','_size_other_hdd')"):
@@ -55,7 +55,10 @@ class PS4GoldHENProvider(ConsoleProvider):
     try:size=int(size) if size is not None else int(inf.get('#_size') or 0) or None
     except:size=None
     external=bool(r['externalHddAppStatus']);storage='Externe HDD' if external else 'Interne HDD';path=str(r['metaDataPath'] or f'/user/app/{tid}')
-    item=InstalledTitle('PlayStation 4',tid,title,ver,'PS4 Game','PS4 app.db',path,str(r['contentId'] or inf.get('CONTENT_ID') or '') or None,'PS4 Game',storage).to_dict();item['installed_size_bytes']=size;item['base_version']=str(inf.get('VERSION') or '') or None;item['install_date']=r['installDate'];items.append(item);diag['games']+=1
+    item=InstalledTitle('PlayStation 4',tid,title,ver,'PS4 Game','PS4 app.db',path,str(r['contentId'] or inf.get('CONTENT_ID') or '') or None,'PS4 Game',storage).to_dict();item['last_accessed_at']=str(r['lastAccessTime'] or '').strip() or None
+    item['history_source']='PS4 app.db'
+    item['history_raw_json']={'lastAccessTime':r['lastAccessTime'],'installDate':r['installDate']}
+    item['installed_size_bytes']=size;item['base_version']=str(inf.get('VERSION') or '') or None;item['install_date']=r['installDate'];items.append(item);diag['games']+=1
   finally:c.close();os.unlink(p)
   if adddata:
    c,p=self._db(adddata)

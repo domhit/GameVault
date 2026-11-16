@@ -156,10 +156,24 @@ class AuroraProvider(ConsoleProvider):
       diag['content_counts']['Title Update']=len(rows)
      if dbpath.lower().endswith('settings.db') and 'ScanPaths' in tables:
       diag['scan_paths']=[dict(x) for x in con.execute('select Id,Path,Depth,ScriptData,OptionsFlag from ScanPaths order by Id').fetchall()]
+     if dbpath.lower().endswith('settings.db') and 'UserRecentGames' in tables:
+      recent_rows=con.execute('select Id,DateTime,ContentId,ProfileId from UserRecentGames order by DateTime desc').fetchall();diag['recent_games']['rows']+=len(recent_rows);diag['_recent_raw']=[dict(x) for x in recent_rows]
     except Exception as e:diag['errors'].append(f'{dbpath}: {type(e).__name__}: {e}')
     finally:
      con.close()
      try:os.unlink(tmp)
      except Exception:pass
+  for rr in diag.pop('_recent_raw',[]):
+   profile=str(rr.get('ProfileId') or '');diag['recent_games']['profiles'][profile]=diag['recent_games']['profiles'].get(profile,0)+1
+   tid=content_id_to_tid.get(int(rr.get('ContentId') or 0))
+   if not tid:diag['recent_games']['unmapped']+=1;continue
+   when=filetime_iso(rr.get('DateTime'))
+   if not when:diag['recent_games']['unmapped']+=1;continue
+   diag['recent_games']['mapped']+=1;old=recent_by_tid.get(tid);raw={'content_id':int(rr.get('ContentId') or 0),'profile_id':profile,'filetime':int(rr.get('DateTime') or 0),'event_id':rr.get('Id')}
+   if not old or when>old['last_played_at']:recent_by_tid[tid]={'last_played_at':when,'history_profile_id':profile,'history_raw_json':raw}
+  for item in items:
+   if item.get('platform')=='Xbox 360' and item.get('category') in ('Xbox 360 Game','XBLA'):
+    hist=recent_by_tid.get(item.get('identifier'))
+    if hist:item.update(hist);item['history_source']='Aurora UserRecentGames'
   diag['deduplicated_items']=len(items)
   return {'items':items,'diagnostics':diag}
