@@ -1,7 +1,22 @@
-# Third-party sources
-- IGDB API by Twitch: metadata and cover fallback. Requires Client ID and Client Secret. Follow IGDB attribution and API terms.
-- Dinos17/FPKGi-Catalog-Hub: PS4 CUSA to cover URL mapping only. Package URLs are not used.
+# Third-party sources and console data sources
+
+## Online metadata
+
+- IGDB API by Twitch: metadata, covers, game modes, user rating and aggregated critic rating. Requires IGDB Client ID/Secret.
+- Dinos17/FPKGi-Catalog-Hub: PS4 CUSA cover URL mapping only; GameVault does not consume package download URLs.
+- ORBISPatches: PS4 title/patch fallback through its public website/internal load-patches request. Unofficial and potentially unstable.
+- Axekinn/ps4-scraper datasets: PS4 catalog/update-summary fallback used by online resolver helpers.
+- xenia-manager/x360db: Xbox 360 metadata/cover enrichment.
 - gauss77/Multiman-Resources and st-alves/ps3-covers: PS3 covers.
 - xlenore/ps2-covers: PS2 covers.
-Artwork and metadata remain property of their respective owners.
-- ORBISPatches: CUSA title/patch fallback via website page and internal loadpatches endpoint. This is an unofficial, potentially unstable integration; GameVault keeps other providers as fallbacks.
+
+Artwork and metadata remain property of their respective owners/providers.
+
+## Read-only console sources
+
+- PS3: FTP `PARAM.SFO`, local ISO/folder paths, webMAN MOD pages and the proprietary Sony MMS files `metadata_db_hdd`, `metadata_db_hdd.idx`, `md_schema.scm`.
+- PS4: GoldHEN FTP access to Sony SQLite databases `app.db` and `addcont.db`.
+- Xbox 360: Aurora SQLite databases `content.db` and `settings.db`; optional NOVA health/diagnostics.
+- Xbox Classic: XBMC4Gamers `MyPrograms6.db`.
+
+GameVault console providers are read-only scanners. The application does not intentionally modify console databases, Game Data, save data, ISOs or Title Updates.

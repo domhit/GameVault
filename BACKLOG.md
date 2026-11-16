@@ -1,47 +1,35 @@
-# GameVault Backlog
+# GameVault Backlog after v1.2.0
+
+## v1.2.0 release gate
+
+- Complete RC acceptance checklist.
+- Merge validated RC to `main` and tag `v1.2.0`.
+- Do not add additional console-provider scope before stable.
+
+## v1.3 - Nintendo console inventory
+
+Start a new Nintendo-focused development branch after v1.2.0 stable.
+
+Target environments:
+- Nintendo Switch / Atmosphere
+- Wii U CFW/jailbreak
+- Nintendo 3DS CFW
+
+First principle: identify authoritative installed-title databases/manifests before directory crawling. Reuse the common ConsoleProvider + InstalledGame model, manual matching, history-source separation and diagnostic pattern established in v1.2.0.
+
+## Post-v1.2 technical improvements
+
+- Console timezone property and canonical UTC normalization for every provider, especially Aurora wall-clock history.
+- Optional ps3netsrv/NAS storage mapping so `/netX` PS3 games can obtain sizes directly from the NAS.
+- Credential encryption/secret-store strategy; current console credentials are stored in PostgreSQL.
+- Background/cancellable console size scans if synchronous scans become too slow.
+- Content-change detection to avoid recalculating unchanged folder sizes.
+- Further PS3 MMS field/type decoding and optional SaveData/trophy historical-footprint support without conflating SaveData timestamps with Last Played.
+- Investigate reliable Xbox 360 DLC source and active/disabled TU state.
+- Restore/extend remote update availability where authoritative public sources exist.
 
 ## Cross-platform library model
-- Group the same game across platforms into one logical game entry.
-- Show every owned platform/version on the combined game page.
-- Preserve platform-specific identifiers, packages, installed status and metadata beneath the shared game identity.
 
-## Console installation inventory
-Read which games are installed on the user's modded consoles. Implement per-console adapters because access methods differ by platform/CFW.
-
-Known environment to investigate in a later release:
-- Xbox 360: Aurora
-- PlayStation 3: Rebug
-- PlayStation 4: GoldHEN
-- Nintendo Switch: Atmosphere
-- Wii U: jailbreak/CFW
-- PlayStation 2: FreeHDBoot
-- Xbox Classic: PrometheOS + XBMC4Gamers
-- Nintendo 3DS: jailbreak/CFW
-
-Target state in GameVault: owned, backup available/location, installed console(s), installed version where obtainable, latest known update, completion and multiplayer metadata.
-
-## Priority B - Update availability
-- Restore the PS4 `Update verfügbar` feature.
-- Resolve latest known PS4 update by CUSA (Sony/OrbisPatches-compatible metadata source).
-- Compare latest remote version with the highest archived Patch/Update package in GameVault.
-- Statuses: `Aktuell`, `Update verfügbar`, `Unbekannt`.
-- Add list filter and detail badge.
-- Information only: never download game/update PKG files.
-
-## Implemented in v0.8.0
-- Manual creation of new games from the web UI (`+ Spiel`), followed by IGDB enrichment/editor maintenance.
-- PS4 update availability: refresh latest-known version by CUSA, compare with highest archived local patch, show status and filter.
-
-## v1.0 candidates inspired by VideoGameTrackarr
-- Logical game identity with platform editions.
+- Group the same game across platforms into one logical game identity while preserving platform editions, identifiers, packages, console installations and metadata.
 - Saved filters and tag manager/bulk tagging.
-- Backup and restore bundle: PostgreSQL dump, local covers, JSON/CSV exports, configuration without secrets.
-- Console-provider adapters for installed-game inventory remain the differentiating priority after the data model is ready.
-
-
-## v1.1 - Console Inventory
-- Common ConsoleProvider abstraction.
-- PlayStation 3 / Rebug first.
-- Read-only FTP baseline with PARAM.SFO parsing.
-- Optional webMAN MOD enrichment for additional ISO/JB/network paths.
-- Match installed TitleID/version against GameVault.
+- Backup/restore bundle for PostgreSQL dump, covers, JSON/CSV exports and non-secret configuration.

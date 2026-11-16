@@ -1,183 +1,165 @@
-# GameVault
+# GameVault v1.2.0
 
-GameVault is a self-hosted game collection and backup inventory for Docker. It combines collection metadata with technical package information, local cover storage, metadata enrichment, resolver diagnostics and PS4 update tracking.
+GameVault is a self-hosted game collection, backup inventory and console-inventory application. It runs as a FastAPI web application with PostgreSQL persistence and is designed for Docker/Portainer deployments.
 
-**Current stable release: v1.0.0**
+## v1.2.0 release-candidate scope
 
-## Highlights
+v1.2.0 is the Sony + Xbox console-inventory milestone. The release candidate supports:
 
-- Responsive web UI for desktop, tablet and phone
-- PostgreSQL persistence
-- Docker / Docker Compose deployment
-- GitHub Actions builds published to `ghcr.io/domhit/gamevault`
-- PlayStation 2, PlayStation 3, PlayStation 4 and Xbox 360 library support
-- Manual game creation and editing
-- Game Collector XML import
-- Documented PS4 Package XLSX import
-- Local cover cache under `/data/covers`
-- IGDB metadata enrichment
-- PS4 CUSA resolver chain and ORBISPatches fallback
-- PS4 update availability tracking
-- Backup packages for Game, Patch and DLC
-- Effective local PS4 version from the highest Game/Patch package version
-- Manual package correction
-- Metadata quality view
-- Duplicate detection, comparison, merge and persistent `Kein Duplikat` exclusions
-- Region, format, edition, storefront, tags and notes
-- PriceCharting links imported from Game Collector
-- Provider / resolver diagnostics
-- JSON library export
+- PlayStation 3 / CFW + webMAN MOD
+- PlayStation 4 / GoldHEN
+- Xbox 360 / Aurora
+- Xbox Classic / XBMC4Gamers
 
-## Architecture
+Nintendo providers are intentionally deferred to the next development branch after v1.2.0 stable.
 
-```text
-Browser
-  |
-GameVault / FastAPI
-  |-- IGDB metadata
-  |-- PS4 catalog / resolver
-  |-- ORBISPatches
-  |-- PS4 update metadata
-  |-- cover providers
-  |
-PostgreSQL + /data/covers
-```
+## User interface
 
-The application is deliberately metadata/read-only toward external game sources. It does not download game or update PKG files.
+- Full-width responsive game wall on desktop.
+- Two-column portrait layout on phones.
+- Full-screen mobile game details with Previous / selection / Next navigation.
+- Search/filter bar remains sticky while scrolling.
+- Detail page restores the previous library scroll position when closed.
+- Secondary dialogs always open above the full-screen detail page.
+- Enter triggers the natural primary action in login/search/ID/editor dialogs where unambiguous.
+- Human-readable German date display (`dd.mm.yyyy hh:mm:ss`) while APIs/database keep structured timestamps.
+- IGDB user and critic ratings including vote/review counts.
 
-## Docker deployment
+## Console inventory
 
-The included `docker-compose.yml` is prepared for the current Synology layout:
+### PlayStation 3
 
-```text
-/volume1/docker/gamevault/postgres
-/volume1/docker/gamevault/data
-```
+Sources are deliberately separate and merged by TitleID/serial:
 
-Before deployment, replace `DEIN_SICHERES_PASSWORT` in both PostgreSQL locations with the same strong password. Do not commit your real password to a public repository.
+1. **webMAN MOD** confirms currently playable PS3 disc/folder/network content, including ps3netsrv `/netX/...` titles.
+2. **FTP** provides local `/dev_hdd0/PS3ISO`, `/dev_hdd0/GAMES`, `/dev_hdd0/game`, PARAM.SFO, local paths and local size scanning.
+3. **MMS (`/dev_hdd0/mms/db/metadata_db_hdd`)** enriches matching titles with Game Data, installed patch, required firmware and play-history information.
 
-For IGDB, configure these variables in Portainer rather than committing secrets:
+Specific FTP content types remain intact when the same title is also exposed by webMAN. Local PS3 ISOs therefore stay `PS3 ISO`; installed HG/PS1/PS2 content stays its native category; webMAN-only `/netX` content remains `webMAN Game`.
 
-```text
-IGDB_CLIENT_ID=...
-IGDB_CLIENT_SECRET=...
-```
+#### PS3 MMS history
 
-The application listens on port `8080`.
+The proprietary MMS database is decoded from `metadata_db_hdd`, `metadata_db_hdd.idx` and `md_schema.scm`.
 
-## GitHub / GHCR
+Validated RTC layout for `Common.stat.timeLastUsed`:
 
-Pushes to `main` build `ghcr.io/domhit/gamevault:latest`. Tags matching `v*` also create a versioned container tag through the included GitHub Actions workflow.
+- year: 2-byte big endian
+- month
+- day
+- reserved byte
+- UTC hour
+- minute
+- second
 
-## Data model
+Executable installed titles (PSN/Classics) use `playCount > 0` plus `Common.stat.timeLastUsed` for Last Played.
 
-### Games
-A game stores collection and metadata fields such as title, platform, TitleID/Serial, IGDB relationship, publisher, developer, genres, release, value, completion state, region, format, edition, tags and notes.
+Disc/ISO titles use their matching Game Data/update record. Controlled tests with **HAZE (BLUS30094)** and **The Evil Within (BLES01916)** confirmed:
 
-### Packages
-PS4 backups are separate rows related to a game:
+- `gameCategory = 6000`, `bootable = 0` identifies Game Data/update records.
+- `_GDATA_...` is a Game Data record.
+- `_INST_...` is an installed/update record.
+- `Game.version` is the base version.
+- `Game.param1` contains the installed patch version in the validated samples (HAZE `01.36`; The Evil Within `01.05`).
+- `Game.ps3SystemVer` contains the required PS3 firmware when present.
+- repeated pure ISO starts update `Common.timeModified`; this is used as the Disc/ISO Last Played/activity value.
+- `Game.timeModified` remains diagnostic because historical records showed values consistent with broader MMS maintenance operations.
+- no synthetic Disc/ISO play count is generated.
 
-- `Game`: Base-game backup
-- `Patch`: Update/Patch backup
-- `DLC`: Add-on backup
+MMS Game Data never creates a playable parent by itself. It enriches a parent discovered through webMAN/FTP. Historical Game Data without a currently playable parent remains non-playable.
 
-There is one internal package `version` field:
+### PlayStation 4 / GoldHEN
 
-- Game version comes from the package-version source during XLSX import.
-- Patch version comes from the patch/app-version source.
-- DLC has no meaningful version.
+- Reads `/system_data/priv/mms/app.db` and `addcont.db` through FTP (default GoldHEN port 2121).
+- Installed game filter is based on CUSA + `uiCategory=game` + category `gd/gp` + `/user/appmeta/`.
+- Reads local game version, storage and DLC.
+- `lastAccessTime` is treated as Last Played, normalized as UTC, then rendered in the browser's local timezone.
+- PS4 update availability remains available through the existing online resolver path.
 
-For PS4 update comparison, the effective local version is the highest known version among Game and Patch packages.
+### Xbox 360 / Aurora
 
-## Imports
+- Reads Aurora `content.db` and `settings.db` through FTP.
+- Supports Xbox 360 games, XBLA, Xbox Classic entries and Title Updates.
+- Collapses multi-disc/source duplicates while retaining diagnostic counts.
+- `UserRecentGames.ContentId -> ContentItems.Id -> TitleId` maps recent-history events to GameVault.
+- Aurora `DateTime` is decoded from Windows FILETIME.
+- The current implementation preserves the already validated Aurora wall-clock value in the UI without a second browser timezone conversion.
+- Unmapped historical ContentIds are reported, never guessed.
+- Orphan Title Updates are reported separately from unknown games.
 
-### Game Collector XML
-Use the XML export from Game Collector for a structured bulk library import. Existing entries are updated on re-import.
+### Xbox Classic / XBMC4Gamers
 
-### PS4 package XLSX
-The XLSX importer is intentionally a specialized package-inventory importer, not a generic spreadsheet library importer. See [PACKAGE_IMPORT.md](PACKAGE_IMPORT.md).
+- Reads the configured `MyPrograms6.db` through FTP.
+- Uses TitleID, title, path and size from the database.
+- `iTimesPlayed` is the play count.
+- `last_played` is Last Played.
+- `lastAccessed` is retained separately and is not substituted for Last Played.
+- Duplicate source rows sharing one TitleID are reported and collapsed.
 
-The UI also exposes a downloadable XLSX template.
+## Play-history semantics
 
-## Metadata & resolvers
+GameVault uses **successful launch/start** as the common meaning of “played”; it does not claim active playtime.
 
-### IGDB
-IGDB is the primary general metadata source for title information, cover art, developer/publisher, genres, game modes, perspectives, themes, franchises, engines and multiplayer information.
+| Platform/source | Last Played | Play count |
+|---|---|---|
+| PS3 installed/PSN/Classics | MMS `timeLastUsed`, confirmed by `playCount > 0` | MMS `playCount` |
+| PS3 Disc/ISO | matching GD/INST `Common.timeModified` | unavailable |
+| PS4 | `app.db.lastAccessTime` | unavailable |
+| Xbox 360 | Aurora `UserRecentGames.DateTime` | unavailable |
+| Xbox Classic | XBMC4Gamers `last_played` | `iTimesPlayed` |
 
-### PlayStation 4
-The PS4 resolver chain can use:
+## Console scan diagnostics
 
-1. existing GameVault title/CUSA information
-2. PS4/SerialStation-derived catalog data
-3. ORBISPatches as additional CUSA/title and patch fallback
-4. IGDB for general metadata
+Diagnostics are intended to explain every reduction from source rows to canonical GameVault items.
 
-The **Quellen & Resolver** view reports provider status.
+PS3 MMS reports physical records separately from alias lookup keys:
 
-## Covers
+- `records_decoded`
+- `unique_record_title_ids`
+- `inventory_matched_records`
+- `inventory_unmatched_records`
+- `aggregate_lookup_keys`
+- `alias_keys`
+- `game_data_titles`
+- `updated_titles`
 
-All displayed covers are local. Remote provider images are downloaded into:
+Xbox 360 reports source/unique/merged parent and TU rows, RecentGames mapped/unmapped counts, and orphan child content. Xbox Classic reports raw DB rows, game rows, unique TitleIDs and merged duplicate rows. PS4 reports games/DLC and exact ignored-row reasons.
 
-```text
-/volume1/docker/gamevault/data/covers
-```
+## Metadata and library features
 
-Legacy Game Collector image paths are not used for display.
+- Game Collector XML import.
+- Specialized PS4 Package XLSX import (see `PACKAGE_IMPORT.md`).
+- IGDB resolver, direct IGDB-ID assignment and bulk refresh.
+- IGDB user/critic ratings and counts.
+- Local cover caching/provider cascade.
+- Metadata editor with per-field manual-source protection.
+- Duplicate analysis, exclusions and merge.
+- Console-created games and manual matching/unmatching.
+- JSON library export.
+- Admin/visitor mode.
+- Persistent per-console manual matching across rescans.
+- Local console size scans with cached results; PS3 `/netX` entries are deliberately skipped by PS3 FTP sizing.
 
-## PS4 update tracking
+## Configuration
 
-GameVault compares the latest-known online PS4 version against the highest local Game/Patch version and reports:
+See `.env.example`. Important settings include PostgreSQL connection, IGDB client credentials, admin password/session duration and cookie security.
 
-- `Aktuell`
-- `Update verfügbar`
-- `Unbekannt`
+Console credentials are currently stored in PostgreSQL. Prefer anonymous/read-only FTP or dedicated low-privilege credentials where the console/CFW supports them.
 
-No PKGs are downloaded.
+## Docker image channels
 
-## Data quality & duplicate cleanup
+The included GitHub Actions workflow currently builds:
 
-The data quality view distinguishes critical and optional missing metadata. Field coloring indicates missing, manual and provider-sourced data.
+- `main` -> `ghcr.io/domhit/gamevault:latest`
+- `develop-v1.1` -> `ghcr.io/domhit/gamevault:dev`
+- `v*` tags -> matching version tag
 
-Duplicate review supports:
+After v1.2.0 stable, development should move to a new Nintendo-focused branch rather than continuing the legacy `develop-v1.1` name.
 
-- side-by-side details
-- merge with package preservation
-- permanent `Kein Duplikat` exclusions
+## Known limitations
 
-## Export
-
-Current JSON export:
-
-```text
-/api/export/games.json
-```
-
-## v1.1 roadmap
-
-The next development line introduces **Console Inventory** via a common `ConsoleProvider` architecture.
-
-First target: PlayStation 3 / Rebug
-
-- read-only FTP as the reliable baseline
-- `PARAM.SFO` parsing
-- TitleID / Serial
-- title
-- installed `APP_VER`
-- content category
-- install path
-- optional webMAN MOD enrichment for ISO/JB/network content
-- matching installed content to the GameVault library
-
-Later adapters are planned for PS4/GoldHEN, Xbox 360/Aurora, Nintendo Switch/Atmosphere, Wii U, PS2/FreeHDBoot, Xbox Classic/PrometheOS + XBMC4Gamers and Nintendo 3DS.
-
-See [BACKLOG.md](BACKLOG.md) for further ideas.
-
-## Third-party data
-
-See [THIRD_PARTY_SOURCES.md](THIRD_PARTY_SOURCES.md). External metadata and artwork remain subject to their respective providers' terms.
-
-## License
-
-GameVault source code is licensed under the [Apache License 2.0](LICENSE).
-
-Game metadata, cover artwork, trademarks, logos and data retrieved from third-party providers are not relicensed by GameVault. They remain subject to the rights, licenses and terms of their respective owners and providers. See [THIRD_PARTY_SOURCES.md](THIRD_PARTY_SOURCES.md).
+- PS3 Disc/ISO MMS activity is a best validated launch/activity signal from controlled tests, not an official Sony API.
+- PS3 Disc/ISO launch count is unavailable and is not synthesized.
+- PS3 network ISO size is not measurable through PS3 FTP; webMAN/ps3netsrv still provides availability.
+- Aurora RecentGames can retain ContentIds no longer present in the current `content.db`; those events stay unmapped.
+- Console credentials are not encrypted at rest in the current release candidate.
+- Nintendo Switch, Wii U and Nintendo 3DS providers are not part of v1.2.0.
