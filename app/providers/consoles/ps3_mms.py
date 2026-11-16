@@ -92,7 +92,7 @@ def _heap_string(data,base,slot):
 
 def _rtc8(raw):
     if len(raw)!=8 or raw==b'\0'*8:return None
-    year=struct.unpack('>H',raw[:2])[0];month,day,hour,minute,second,sub=raw[2:]
+    year=struct.unpack('>H',raw[:2])[0];month,day,reserved,hour,minute,second=raw[2:]
     if not (2000<=year<=2100 and 1<=month<=12 and 1<=day<=31 and hour<24 and minute<60 and second<60):return None
     return f'{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}+00:00'
 
