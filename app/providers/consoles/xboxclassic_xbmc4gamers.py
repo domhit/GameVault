@@ -25,7 +25,7 @@ class XBMC4GamersProvider(ConsoleProvider):
   with self.connect() as ftp:
    b=BytesIO();ftp.retrbinary('RETR '+self.database_path,b.write)
   fd,path=tempfile.mkstemp(suffix='.db');os.close(fd);open(path,'wb').write(b.getvalue())
-  items=[];diag={'database_path':self.database_path,'rows':0,'games':0,'apps_ignored':0,'errors':[]}
+  items=[];diag={'database_path':self.database_path,'rows':0,'games':0,'apps_ignored':0,'unique_title_ids':0,'merged_duplicate_rows':0,'errors':[]};seen_game_ids=set()
   try:
    con=sqlite3.connect(path);con.row_factory=sqlite3.Row
    tables={r[0] for r in con.execute("select name from sqlite_master where type='table'")}
@@ -38,13 +38,14 @@ class XBMC4GamersProvider(ConsoleProvider):
     title=str(r['altname'] or r['xbedescription'] or '').strip()
     tid=str(r['title_id'] or '').strip().upper() or tid_hex(r['titleId'])
     if not title or not tid:continue
+    seen_game_ids.add(tid)
     size=int(r['iSize'] or 0) if str(r['iSize'] or '').lstrip('-').isdigit() else None
     item=InstalledTitle('Xbox Classic',tid,title,None,'Xbox Classic','XBMC4Gamers MyPrograms',fn,category='Xbox Classic',storage=(fn.split(':',1)[0] if ':' in fn else 'Xbox'),file_size=None).to_dict()
     play_count=int(r['iTimesPlayed'] or 0);last_played=str(r['last_played'] or '').strip() or None;raw_access=int(r['lastAccessed'] or 0);last_access=(datetime.datetime(1601,1,1,tzinfo=datetime.timezone.utc)+datetime.timedelta(microseconds=raw_access/10)).isoformat() if raw_access else None
     item['play_count']=play_count;item['last_played_at']=last_played if play_count>0 and last_played else None;item['last_accessed_at']=last_access;item['history_source']='XBMC4Gamers';item['history_raw_json']={'iTimesPlayed':play_count,'last_played':last_played,'lastAccessed':raw_access}
     item['installed_size_bytes']=size;item['metadata_hint']={'developer':r['developer'],'publisher':r['publisher'],'genres':r['genre'],'release_date':r['release_date'],'description':r['synopsis'],'features_general':r['features_general'],'features_online':r['features_online']}
     items.append(item);diag['games']+=1
-   con.close()
+   diag['unique_title_ids']=len(seen_game_ids);diag['merged_duplicate_rows']=max(0,diag['games']-diag['unique_title_ids']);con.close()
   except Exception as e:diag['errors'].append(f'{type(e).__name__}: {e}')
   finally:
    try:os.unlink(path)

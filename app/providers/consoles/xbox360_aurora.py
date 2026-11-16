@@ -128,7 +128,7 @@ class AuroraProvider(ConsoleProvider):
     if progress:progress(i,len(records),row)
   return results
  def scan(self):
-  items=[];diag={'databases':[],'errors':[],'content_items':0,'title_updates':0,'scan_paths':[],'content_counts':{},'ignored_homebrew':0,'recent_games':{'rows':0,'mapped':0,'unmapped':0,'profiles':{}}};content_id_to_tid={};recent_by_tid={};recent_raw=[]
+  items=[];diag={'databases':[],'errors':[],'content_items':0,'title_updates':0,'scan_paths':[],'content_counts':{},'ignored_homebrew':0,'recent_games':{'rows':0,'mapped':0,'unmapped':0,'profiles':{}},'parent_rows':0,'unique_parents':0,'parent_rows_merged':0,'unique_title_updates':0,'title_update_rows_merged':0};content_id_to_tid={};recent_by_tid={};recent_raw=[]
   with self.connect() as ftp:
    dbs=self._discover_dbs(ftp);diag['databases']=dbs
    for dbpath in dbs:
@@ -149,6 +149,7 @@ class AuroraProvider(ConsoleProvider):
        if k not in games:
         games[k]={'platform':'Xbox Classic' if kind=='Xbox Classic' else 'Xbox 360','identifier':tid,'title':title,'installed_version':version_text(r['BaseVersion']),'content_type':kind,'source':'Aurora ContentItems','path':path,'content_id':tid_hex(r['MediaId']),'category':kind,'storage':self._storage(path),'paths':[path] if path else []}
        elif path and path not in games[k]['paths']:games[k]['paths'].append(path)
+      diag['parent_rows']+=sum(1 for r in rows if GROUP_NAMES.get(int(r['ContentGroup'] or 0)) in ('Xbox 360 Game','XBLA','Xbox Classic'));diag['unique_parents']+=len(games);diag['parent_rows_merged']=max(0,diag['parent_rows']-diag['unique_parents'])
       for g in games.values():
        if len(g['paths'])>1:g['path']=' | '.join(g['paths'])
        g.pop('paths',None);items.append(InstalledTitle(**g).to_dict());diag['content_counts'][g['category']]=diag['content_counts'].get(g['category'],0)+1
@@ -158,7 +159,7 @@ class AuroraProvider(ConsoleProvider):
        tid=tid_hex(r['TitleId']);title=str(r['DisplayName'] or f'{tid} Title Update').strip();path=str(r['LivePath'] or r['BackupPath'] or r['FileName'] or '')
        if not tid:continue
        tu=InstalledTitle('Xbox 360',tid,title,version_text(r['BaseVersion'],r['Version']),'Title Update','Aurora TitleUpdates',path,tid_hex(r['MediaId']),'Title Update',self._storage(path)).to_dict();tu['file_size']=str(r['FileSize'] or '') or None;items.append(tu)
-      diag['content_counts']['Title Update']=len(rows)
+      diag['content_counts']['Title Update']=len(rows);tu_keys={(tid_hex(r['TitleId']),version_text(r['BaseVersion'],r['Version']),tid_hex(r['MediaId']),str(r['LivePath'] or r['BackupPath'] or r['FileName'] or '')) for r in rows};diag['unique_title_updates']+=len(tu_keys);diag['title_update_rows_merged']=max(0,diag['title_updates']-diag['unique_title_updates'])
      if dbpath.lower().endswith('settings.db') and 'ScanPaths' in tables:
       diag['scan_paths']=[dict(x) for x in con.execute('select Id,Path,Depth,ScriptData,OptionsFlag from ScanPaths order by Id').fetchall()]
      if dbpath.lower().endswith('settings.db') and 'UserRecentGames' in tables:
