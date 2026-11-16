@@ -1,10 +1,10 @@
-# GameVault v1.2.0-dev43-fix2
+# GameVault v1.2.0-dev43-fix3
 
-PS3 parent-source correction:
-- webMAN is authoritative for currently playable PS3 inventory, including local `/dev_hdd0` and ps3netsrv `/netX` games.
-- FTP ISO/folder results enrich webMAN with local file/size data but do not replace the webMAN parent.
-- FTP HDD `GD` records are enrichment only and can never become/replace a playable parent.
-- MMS `_GDATA_` / `_INST_` data enriches the canonical parent with Game Data, base version, installed patch, firmware and history.
-- ISO/disc activity uses only `Common.timeModified`; `Game.timeModified` remains diagnostic.
-- `_INST_` counts as Game Data presence.
-- Diagnostics separate unique MMS record IDs, aggregate lookup keys and aliases.
+Final PS3 parent classification refinement:
+- webMAN is authoritative for whether PS3 disc/folder/net content is playable, but does not overwrite a more specific content type.
+- Installed FTP/PARAM.SFO content (HG/1P/2P/etc.) remains its specific installed parent even when also listed by webMAN.
+- Local FTP `PS3 ISO` / folder entries remain their specific content type; webMAN confirms availability.
+- webMAN `/netX/...` entries become canonical parents when no local/installed content with that TitleID exists, preserving ps3netsrv support.
+- FTP HDD `GD` remains enrichment-only and can never promote itself to playable.
+- MMS Game Data, patch/version/firmware/history enrichment remains attached by TitleID.
+- Disc/ISO Last Played continues to use only `Common.timeModified`.
