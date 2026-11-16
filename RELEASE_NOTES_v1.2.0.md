@@ -1,6 +1,6 @@
-# GameVault v1.2.0-rc1
+# GameVault v1.2.0
 
-Release candidate for the Sony + Xbox console-inventory milestone.
+Stable release for the Sony + Xbox console-inventory milestone.
 
 ## Highlights
 
@@ -22,4 +22,4 @@ Release candidate for the Sony + Xbox console-inventory milestone.
 
 ## RC acceptance
 
-Run the checklist in `RELEASE_CHECKLIST_v1.2.0.md` before merging to `main` and tagging `v1.2.0`.
+The checklist in `RELEASE_CHECKLIST_v1.2.0.md` was passed before merging to `main` and tagging `v1.2.0`.

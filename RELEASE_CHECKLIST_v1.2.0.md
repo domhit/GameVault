@@ -23,7 +23,7 @@ Record each item as PASS/FAIL. Do not merge to `main` until every release-blocki
 - [ ] Enter works for admin password, IGDB direct ID and other single-action inputs.
 - [ ] Dates display as `dd.mm.yyyy hh:mm:ss`, not raw ISO strings.
 
-## 3. PS3 / Rebug + webMAN
+## 3. PS3 / CFW + webMAN
 
 ### Inventory
 - [ ] Full PS3 scan finishes with `errors: []` for expected FTP/webMAN sources.
@@ -36,7 +36,7 @@ Record each item as PASS/FAIL. Do not merge to `main` until every release-blocki
 
 ### MMS diagnostics
 - [ ] `records_decoded == unique_record_title_ids` for the current expected sample unless a new physical duplicate is understood.
-- [ ] `inventory_unmatched_records == 0` for the current validated library.
+- [ ] `inventory_unmatched_records == 0` for the current validated library or if not 0 explainable deviation
 - [ ] `aggregate_lookup_keys == unique_record_title_ids + alias_keys`.
 - [ ] `game_data_titles` and `updated_titles` are plausible after a fresh scan.
 

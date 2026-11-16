@@ -1,4 +1,4 @@
-# GameVault v1.2.0-rc1
+# GameVault v1.2.0
 
 GameVault is a self-hosted game collection, backup inventory and console-inventory application. It runs as a FastAPI web application with PostgreSQL persistence and is designed for Docker/Portainer deployments.
 
@@ -6,7 +6,7 @@ GameVault is a self-hosted game collection, backup inventory and console-invento
 
 v1.2.0 is the Sony + Xbox console-inventory milestone. The release candidate supports:
 
-- PlayStation 3 / Rebug + webMAN MOD
+- PlayStation 3 / CFW + webMAN MOD
 - PlayStation 4 / GoldHEN
 - Xbox 360 / Aurora
 - Xbox Classic / XBMC4Gamers
