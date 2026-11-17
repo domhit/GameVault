@@ -1,17 +1,17 @@
-# GameVault v1.3.0-dev1
+# GameVault v1.3.0-dev2
 
 GameVault is a self-hosted game collection, backup inventory and console-inventory application. It runs as a FastAPI web application with PostgreSQL persistence and is designed for Docker/Portainer deployments.
 
 ## v1.3.0 development
 
-v1.3.0-dev1 starts the Nintendo console-inventory development line on top of the validated v1.2.0 Sony + Xbox baseline. Existing supported console providers remain:
+v1.3.0-dev2 starts the Nintendo console-inventory development line on top of the validated v1.2.0 Sony + Xbox baseline. Existing supported console providers remain:
 
 - PlayStation 3 / CFW + webMAN MOD
 - PlayStation 4 / GoldHEN
 - Xbox 360 / Aurora
 - Xbox Classic / XBMC4Gamers
 
-Current v1.3 development targets Nintendo Switch / Atmosphere, Wii U CFW and Nintendo 3DS CFW. dev1 only establishes the new development/version/workflow baseline; Nintendo provider implementation follows in subsequent development builds.
+Current v1.3 development targets Nintendo Switch / Atmosphere, Wii U CFW and Nintendo 3DS CFW. dev1 only establishes the new development/version/workflow baseline; dev2 introduces the Wii U / GameVault Exporter provider. Nintendo Switch and Nintendo 3DS providers follow in later builds.
 
 ## User interface
 
@@ -163,3 +163,11 @@ v1.3 development now runs on `develop-v1.3`; `main` remains the stable release l
 - Aurora RecentGames can retain ContentIds no longer present in the current `content.db`; those events stay unmapped.
 - Console credentials are not encrypted at rest in the current release candidate.
 - Nintendo Switch, Wii U and Nintendo 3DS providers are the v1.3 development target and are not implemented in dev1 yet.
+
+
+#### Wii U / GameVault Exporter
+- Reads the exporter JSON read-only through Wii U FTP.
+- Default path: `/fs/vol/external01/wiiu/apps/GameVault-WiiU-Exporter/installed_titles.json`.
+- Base games become Wii U parent inventory rows; updates and DLC are retained as child content.
+- Wii U Title IDs are normalized to the `00050000...` base identifier for matching.
+- Publisher, region, Product Code and exporter diagnostics remain available as source metadata.

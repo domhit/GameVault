@@ -7,7 +7,7 @@ CLIENT_SECRET=os.getenv('IGDB_CLIENT_SECRET','')
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
 TOKEN_URL='https://id.twitch.tv/oauth2/token'
 API='https://api.igdb.com/v4'
-PLATFORMS={'PlayStation 1':7,'PlayStation Portable':38,'PlayStation 2':8,'PlayStation 3':9,'PlayStation 4':48,'Xbox 360':12,'Xbox Classic':11}
+PLATFORMS={'PlayStation 1':7,'PlayStation Portable':38,'PlayStation 2':8,'PlayStation 3':9,'PlayStation 4':48,'Xbox 360':12,'Xbox Classic':11,'Wii U':41}
 _token=None
 
 def configured(): return bool(CLIENT_ID and CLIENT_SECRET)
@@ -54,6 +54,6 @@ def map_record(r):
  return {'igdb_id':r.get('id'),'title':r.get('name'),'description':r.get('summary'),'release_date':datetime.fromtimestamp(r['first_release_date'],timezone.utc).date().isoformat() if r.get('first_release_date') else None,'genres':', '.join(x.get('name','') for x in r.get('genres',[]) if x.get('name')) or None,'publisher':', '.join(filter(None,pubs)) or None,'developer':', '.join(filter(None,devs)) or None,'cover_url':f'https://images.igdb.com/igdb/image/upload/t_cover_big_2x/{cover}.jpg' if cover else None,'game_modes':', '.join(x.get('name','') for x in r.get('game_modes',[]) if x.get('name')) or None,'perspectives':', '.join(x.get('name','') for x in r.get('player_perspectives',[]) if x.get('name')) or None,'themes':', '.join(x.get('name','') for x in r.get('themes',[]) if x.get('name')) or None,'franchises':', '.join(x.get('name','') for x in r.get('franchises',[]) if x.get('name')) or None,'engines':', '.join(x.get('name','') for x in r.get('game_engines',[]) if x.get('name')) or None,'multiplayer_modes':r.get('multiplayer_modes') or [],'user_rating':round(float(r['rating']),1) if r.get('rating') is not None else None,'user_rating_count':int(r.get('rating_count') or 0) if r.get('rating_count') is not None else None,'critic_rating':round(float(r['aggregated_rating']),1) if r.get('aggregated_rating') is not None else None,'critic_rating_count':int(r.get('aggregated_rating_count') or 0) if r.get('aggregated_rating_count') is not None else None,'confidence':r.get('_confidence',0)}
 def download_cover(url,game_id,data_dir):
  if not url:return None
- r=requests.get(url,timeout=TIMEOUT,headers={'User-Agent':'GameVault/1.3.0-dev1'});r.raise_for_status()
+ r=requests.get(url,timeout=TIMEOUT,headers={'User-Agent':'GameVault/1.3.0-dev2'});r.raise_for_status()
  if len(r.content)<1000:return None
  p=Path(data_dir)/'covers'/f'{game_id}-igdb.jpg';p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(r.content);return f'/covers/{p.name}'

@@ -1,6 +1,6 @@
 # GameVault v1.3 development
 
-Current build: **v1.3.0-dev1**  
+Current build: **v1.3.0-dev2**  
 Branch: **develop-v1.3**  
 Container channel: **ghcr.io/domhit/gamevault:dev**
 
@@ -23,3 +23,11 @@ For each platform, identify authoritative installed-title databases/manifests be
 - `:dev` container tag follows `develop-v1.3`.
 - Documentation moved from release-candidate wording to active v1.3 development wording.
 - No Nintendo provider has been introduced yet.
+
+
+### dev2
+- Adds Wii U / GameVault Exporter as the first Nintendo console provider.
+- Reads `/fs/vol/external01/wiiu/apps/GameVault-WiiU-Exporter/installed_titles.json` read-only over FTP.
+- Imports GAME parents and attaches UPDATE/DLC rows using canonical Wii U base Title IDs.
+- Preserves USB/NAND source rows and exporter metadata in scan diagnostics.
+- Adds Wii U to IGDB platform resolution and the console-management UI.
