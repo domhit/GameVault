@@ -1,6 +1,6 @@
 # GameVault v1.3 development
 
-Current build: **v1.3.0-dev6**  
+Current build: **v1.3.0-dev7**  
 Branch: **develop-v1.3**  
 Container channel: **ghcr.io/domhit/gamevault:dev**
 
@@ -58,3 +58,10 @@ For each platform, identify authoritative installed-title databases/manifests be
 - Carries USB Loader GX PlayCount into GameVault history when provided.
 - Adds Wii / IGDB platform mapping and console-management UI support.
 - Keeps Wii U and Wii inventory as separate providers even when both JSON files are exposed through the same Wii U FTP server.
+
+
+#### dev7
+- Improves Wii metadata titles for known poor USB Loader GX cache names using stable Wii Game IDs.
+- Reads `GXGameStatistics.cfg` directly over FTP as a fallback when the exporter JSON contains no PlayCount values.
+- Marks known Wii ROM hacks/mods as manual-metadata candidates instead of automatically mapping them to the retail parent game during bulk IGDB refresh.
+- Preserves original cache titles in `history_raw_json` for diagnostics.

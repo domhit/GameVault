@@ -1,10 +1,10 @@
-# GameVault v1.3.0-dev6
+# GameVault v1.3.0-dev7
 
 GameVault is a self-hosted game collection, backup inventory and console-inventory application. It runs as a FastAPI web application with PostgreSQL persistence and is designed for Docker/Portainer deployments.
 
 ## v1.3.0 development
 
-v1.3.0-dev6 starts the Nintendo console-inventory development line on top of the validated v1.2.0 Sony + Xbox baseline. Existing supported console providers remain:
+v1.3.0-dev7 starts the Nintendo console-inventory development line on top of the validated v1.2.0 Sony + Xbox baseline. Existing supported console providers remain:
 
 - PlayStation 3 / CFW + webMAN MOD
 - PlayStation 4 / GoldHEN
