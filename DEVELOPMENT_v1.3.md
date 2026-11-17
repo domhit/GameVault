@@ -1,6 +1,6 @@
 # GameVault v1.3 development
 
-Current build: **v1.3.0-dev4**  
+Current build: **v1.3.0-dev5**  
 Branch: **develop-v1.3**  
 Container channel: **ghcr.io/domhit/gamevault:dev**
 
@@ -43,3 +43,10 @@ For each platform, identify authoritative installed-title databases/manifests be
 - Actually applies IGDB search-title normalization (line breaks, ®/™, punctuation aliases).
 - IGDB refresh of already linked games now loads `release_dates` with the game's current platform, so `platform_release_date` is populated retroactively.
 - Exposes original and platform-specific release dates in the normal game UI/edit flow where release fields are rendered.
+
+
+### dev5
+- Fixes the IGDB manual-search HTTP 500 by importing `re` for the search normalizer.
+- Accepts both scalar and expanded-object `release_dates.platform` values when mapping platform releases.
+- Displays Original-Release and platform-specific release in the normal game detail view.
+- Existing IGDB bindings are refreshed with the current GameVault platform so platform release dates can be backfilled.
