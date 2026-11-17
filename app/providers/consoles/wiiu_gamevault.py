@@ -66,12 +66,13 @@ class WiiUGameVaultProvider(ConsoleProvider):
         diag['unique_title_ids']=len(all_ids)
         parent_ids={tid for _,tid,kind,_ in valid if kind=='GAME'};diag['parent_groups']=len(parent_ids)
         for row,tid,kind,storage in valid:
-            parent_id=parent_title_id(tid);title=str(row.get('name') or tid).strip();version=row.get('installedVersion')
+            parent_id=parent_title_id(tid);title=re.sub(r'\s+',' ',str(row.get('name') or tid)).strip();version=row.get('installedVersion')
             metadata={'product_code':row.get('productCode'),'publisher':row.get('publisher'),'company_code':row.get('companyCode'),'content_platform':row.get('contentPlatform'),'region':row.get('region'),'xml_title_version':row.get('xmlTitleVersion'),'drc_use':row.get('drcUse'),'network_use':row.get('networkUse'),'online_account_use':row.get('onlineAccountUse'),'group_id':row.get('groupId'),'app_type':row.get('appType'),'os_version':row.get('osVersion'),'sdk_version':row.get('sdkVersion'),'icon_path':row.get('iconPath'),'raw_title_id':tid}
             category=KIND_CATEGORY[kind]
             item=InstalledTitle('Wii U',parent_id,title,str(version) if version is not None else None,category,'GameVault Wii U Exporter',str(row.get('path') or ''),tid,category,storage).to_dict()
             item['history_raw_json']={'wiiu_metadata':metadata,'exporter_version':doc.get('exporterVersion'),'generated_at':doc.get('generatedAt')}
             item['metadata_hint']={'publisher':row.get('publisher'),'region':row.get('region'),'product_code':row.get('productCode')}
+            item['source_parent_present']=parent_id in parent_ids
             items.append(item)
             if kind=='GAME':diag['games']+=1
             elif kind=='UPDATE':diag['updates']+=1

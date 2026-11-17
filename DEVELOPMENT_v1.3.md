@@ -1,6 +1,6 @@
 # GameVault v1.3 development
 
-Current build: **v1.3.0-dev2**  
+Current build: **v1.3.0-dev3**  
 Branch: **develop-v1.3**  
 Container channel: **ghcr.io/domhit/gamevault:dev**
 
@@ -31,3 +31,9 @@ For each platform, identify authoritative installed-title databases/manifests be
 - Imports GAME parents and attaches UPDATE/DLC rows using canonical Wii U base Title IDs.
 - Preserves USB/NAND source rows and exporter metadata in scan diagnostics.
 - Adds Wii U to IGDB platform resolution and the console-management UI.
+
+
+### dev3
+- Fixes Wii U GAME/UPDATE/DLC parent diagnostics so children with a source parent are no longer reported as orphans before the parent is matched into the GameVault library.
+- Normalizes Wii U line breaks and search-only trademark symbols for IGDB matching.
+- Stores IGDB's original `first_release_date` separately from the earliest release date for the selected platform (for example Wii U Virtual Console).

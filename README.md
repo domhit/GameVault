@@ -1,10 +1,10 @@
-# GameVault v1.3.0-dev2
+# GameVault v1.3.0-dev3
 
 GameVault is a self-hosted game collection, backup inventory and console-inventory application. It runs as a FastAPI web application with PostgreSQL persistence and is designed for Docker/Portainer deployments.
 
 ## v1.3.0 development
 
-v1.3.0-dev2 starts the Nintendo console-inventory development line on top of the validated v1.2.0 Sony + Xbox baseline. Existing supported console providers remain:
+v1.3.0-dev3 starts the Nintendo console-inventory development line on top of the validated v1.2.0 Sony + Xbox baseline. Existing supported console providers remain:
 
 - PlayStation 3 / CFW + webMAN MOD
 - PlayStation 4 / GoldHEN
@@ -171,3 +171,9 @@ v1.3 development now runs on `develop-v1.3`; `main` remains the stable release l
 - Base games become Wii U parent inventory rows; updates and DLC are retained as child content.
 - Wii U Title IDs are normalized to the `00050000...` base identifier for matching.
 - Publisher, region, Product Code and exporter diagnostics remain available as source metadata.
+
+
+#### Wii U dev3 refinements
+- Wii U child inventories remain attached to their canonical `00050000...` parent identifiers without false orphan warnings.
+- IGDB title search ignores line breaks plus ®/™ markers while preserving display titles.
+- `release_date` is the original game release; `platform_release_date` is the earliest IGDB release for the current GameVault platform.
