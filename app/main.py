@@ -701,7 +701,8 @@ def bulk_import_console(console_id:int,payload:dict={}):
     save_source_map(g,sources);db.add(g);db.flush();x.game_id=g.id;x.match_method='console_bulk_create';x.match_confidence=1.0;created+=1;created_ids.append(g.id)
     # XBMC4Gamers scanner already provides useful installed size; metadata enrichment can be done globally later.
     if enrich and igdb.configured():
-     hits=igdb.search(g.title,g.platform,5);best=igdb.map_record(hits[0]) if hits else None
+     wii_mod=(g.platform=='Wii' and any(x in (g.title or '').casefold() for x in ('newer super mario','new old super mario','falling leaves','phoenix wings','dark hole','mario kart wii 2017','super mario bros. revolution','where it all began','2 reggie','5 spica','super smash bros. 3')))
+     hits=[] if wii_mod else igdb.search(g.title,g.platform,5);best=igdb.map_record(hits[0]) if hits else None
      if best and best.get('confidence',0)>=.94:apply_igdb(g,igdb.get_by_id(best['igdb_id']) or best,force=False)
    except Exception as e:failed+=1;errors.append(f'{x.title}: {type(e).__name__}: {e}'[:300])
   db.commit()
@@ -1199,11 +1200,6 @@ def quality():
         return {'total':len(gs),'complete':sum(metadata_quality(g)['status']=='complete' for g in gs),'partial':sum(metadata_quality(g)['status']=='partial' for g in gs),'missing':sum(metadata_quality(g)['status']=='critical' for g in gs),'review':sum(g.metadata_status=='review' for g in gs),'without_id':sum(not g.title_id for g in gs),'without_cover':sum(not cover_is_local(g) for g in gs),'igdb_configured':igdb.configured()}
 
 @app.post('/api/metadata/igdb/refresh')
-def is_wii_custom_game(g):
- if not g or g.platform!='Wii':return False
- custom_ids={'KMNE03','PMNEO1','RMCEB1','SANE01','SMNE23','SRGP01','SRNP01','SWBP01','DLZEPW','RSBE24','RSBEDL'}
- return (g.title_id or '').upper() in custom_ids
-
 def igdb_refresh():
  if not igdb.configured():raise HTTPException(503,'IGDB ist nicht konfiguriert.')
  out={'checked':0,'resolved_by_id':0,'resolved_by_title':0,'applied':0,'review':0,'not_found':0,'errors':0,'changed_fields':0}
@@ -1212,8 +1208,6 @@ def igdb_refresh():
   for g in games:
    out['checked']+=1
    try:
-    if is_wii_custom_game(g):
-     g.metadata_status='not_found';g.cover_error='Wii custom/mod title: manual metadata mapping required';db.commit();out['not_found']+=1;continue
     # Same resolver order as the detail action: known IGDB ID, CUSA-title resolution, then title/platform search.
     m=None
     if g.metadata_provider=='IGDB' and g.metadata_provider_id and str(g.metadata_provider_id).isdigit():

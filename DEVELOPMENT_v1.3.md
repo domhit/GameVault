@@ -61,7 +61,7 @@ For each platform, identify authoritative installed-title databases/manifests be
 
 
 #### dev7
-- Improves Wii metadata titles for known poor USB Loader GX cache names using stable Wii Game IDs.
-- Reads `GXGameStatistics.cfg` directly over FTP as a fallback when the exporter JSON contains no PlayCount values.
-- Marks known Wii ROM hacks/mods as manual-metadata candidates instead of automatically mapping them to the retail parent game during bulk IGDB refresh.
-- Preserves original cache titles in `history_raw_json` for diagnostics.
+- Improves Wii data quality with conservative Game-ID-based canonical titles for known poor USB Loader GX cache names.
+- Preserves the original WII.cache title in `history_raw_json` for traceability.
+- Keeps obvious Wii ROM hacks/mods out of automatic IGDB bulk matching; manual single-game assignment remains available and persists across scans.
+- Wii PlayCount fields from `wii_usbloadergx.json` continue to map into InstalledGame history when the exporter provides them.
