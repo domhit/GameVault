@@ -35,23 +35,30 @@ def _score(rows,title):
  return sorted(seen.values(),key=lambda x:x['_confidence'],reverse=True)
 
 def search(title,platform,limit=8):
+ title=search_title(title)
  pid=PLATFORMS.get(platform)
  fields='name,summary,first_release_date,rating,rating_count,aggregated_rating,aggregated_rating_count,cover.image_id,genres.name,game_modes.name,player_perspectives.name,themes.name,franchises.name,game_engines.name,multiplayer_modes.offlinecoop,multiplayer_modes.offlinemax,multiplayer_modes.onlinecoop,multiplayer_modes.onlinecoopmax,multiplayer_modes.onlinemax,multiplayer_modes.lancoop,multiplayer_modes.splitscreen,multiplayer_modes.splitscreenonline,multiplayer_modes.campaigncoop,multiplayer_modes.dropin,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.name,release_dates.date,release_dates.platform'
+ aliases=[title]
+ plain=' '.join(re.sub(r'[^\w ]+',' ',title,flags=re.UNICODE).split())
+ if plain and plain not in aliases:aliases.append(plain)
  rows=[]
  if pid:
-  rows=post('games',f'search \"{esc(title)}\"; fields {fields}; where platforms = ({pid}); limit {limit};')
+  for alias in aliases:
+   rows+=post('games',f'search \"{esc(alias)}\"; fields {fields}; where platforms = ({pid}); limit {limit};')
  if not rows:
-  rows=post('games',f'search \"{esc(title)}\"; fields {fields}; limit {limit};')
+  for alias in aliases:
+   rows+=post('games',f'search \"{esc(alias)}\"; fields {fields}; limit {limit};')
  
  for row in rows: row['_requested_platform']=platform
  return _score(rows,title)
 
-def get_by_id(igdb_id):
+def get_by_id(igdb_id,platform=None):
  fields='name,summary,first_release_date,rating,rating_count,aggregated_rating,aggregated_rating_count,cover.image_id,genres.name,game_modes.name,player_perspectives.name,themes.name,franchises.name,game_engines.name,multiplayer_modes.offlinecoop,multiplayer_modes.offlinemax,multiplayer_modes.onlinecoop,multiplayer_modes.onlinecoopmax,multiplayer_modes.onlinemax,multiplayer_modes.lancoop,multiplayer_modes.splitscreen,multiplayer_modes.splitscreenonline,multiplayer_modes.campaigncoop,multiplayer_modes.dropin,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.name,release_dates.date,release_dates.platform'
  rows=post('games',f'fields {fields}; where id = {int(igdb_id)}; limit 1;')
  if not rows:return None
  rows[0]['_confidence']=1.0
- return map_record(rows[0])
+ rows[0]['_requested_platform']=platform
+ return map_record(rows[0],platform)
 
 def map_record(r,platform=None):
  platform=platform or r.get('_requested_platform')
@@ -65,6 +72,6 @@ def map_record(r,platform=None):
  return {'igdb_id':r.get('id'),'title':r.get('name'),'description':r.get('summary'),'release_date':datetime.fromtimestamp(r['first_release_date'],timezone.utc).date().isoformat() if r.get('first_release_date') else None,'platform_release_date':platform_release_date,'genres':', '.join(x.get('name','') for x in r.get('genres',[]) if x.get('name')) or None,'publisher':', '.join(filter(None,pubs)) or None,'developer':', '.join(filter(None,devs)) or None,'cover_url':f'https://images.igdb.com/igdb/image/upload/t_cover_big_2x/{cover}.jpg' if cover else None,'game_modes':', '.join(x.get('name','') for x in r.get('game_modes',[]) if x.get('name')) or None,'perspectives':', '.join(x.get('name','') for x in r.get('player_perspectives',[]) if x.get('name')) or None,'themes':', '.join(x.get('name','') for x in r.get('themes',[]) if x.get('name')) or None,'franchises':', '.join(x.get('name','') for x in r.get('franchises',[]) if x.get('name')) or None,'engines':', '.join(x.get('name','') for x in r.get('game_engines',[]) if x.get('name')) or None,'multiplayer_modes':r.get('multiplayer_modes') or [],'user_rating':round(float(r['rating']),1) if r.get('rating') is not None else None,'user_rating_count':int(r.get('rating_count') or 0) if r.get('rating_count') is not None else None,'critic_rating':round(float(r['aggregated_rating']),1) if r.get('aggregated_rating') is not None else None,'critic_rating_count':int(r.get('aggregated_rating_count') or 0) if r.get('aggregated_rating_count') is not None else None,'confidence':r.get('_confidence',0)}
 def download_cover(url,game_id,data_dir):
  if not url:return None
- r=requests.get(url,timeout=TIMEOUT,headers={'User-Agent':'GameVault/1.3.0-dev3'});r.raise_for_status()
+ r=requests.get(url,timeout=TIMEOUT,headers={'User-Agent':'GameVault/1.3.0-dev4'});r.raise_for_status()
  if len(r.content)<1000:return None
  p=Path(data_dir)/'covers'/f'{game_id}-igdb.jpg';p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(r.content);return f'/covers/{p.name}'

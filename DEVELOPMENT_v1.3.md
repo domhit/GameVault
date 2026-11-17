@@ -1,6 +1,6 @@
 # GameVault v1.3 development
 
-Current build: **v1.3.0-dev3**  
+Current build: **v1.3.0-dev4**  
 Branch: **develop-v1.3**  
 Container channel: **ghcr.io/domhit/gamevault:dev**
 
@@ -37,3 +37,9 @@ For each platform, identify authoritative installed-title databases/manifests be
 - Fixes Wii U GAME/UPDATE/DLC parent diagnostics so children with a source parent are no longer reported as orphans before the parent is matched into the GameVault library.
 - Normalizes Wii U line breaks and search-only trademark symbols for IGDB matching.
 - Stores IGDB's original `first_release_date` separately from the earliest release date for the selected platform (for example Wii U Virtual Console).
+
+
+### dev4
+- Actually applies IGDB search-title normalization (line breaks, ®/™, punctuation aliases).
+- IGDB refresh of already linked games now loads `release_dates` with the game's current platform, so `platform_release_date` is populated retroactively.
+- Exposes original and platform-specific release dates in the normal game UI/edit flow where release fields are rendered.
