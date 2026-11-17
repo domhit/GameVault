@@ -1,10 +1,10 @@
-# GameVault v1.3.0-dev5
+# GameVault v1.3.0-dev6
 
 GameVault is a self-hosted game collection, backup inventory and console-inventory application. It runs as a FastAPI web application with PostgreSQL persistence and is designed for Docker/Portainer deployments.
 
 ## v1.3.0 development
 
-v1.3.0-dev5 starts the Nintendo console-inventory development line on top of the validated v1.2.0 Sony + Xbox baseline. Existing supported console providers remain:
+v1.3.0-dev6 starts the Nintendo console-inventory development line on top of the validated v1.2.0 Sony + Xbox baseline. Existing supported console providers remain:
 
 - PlayStation 3 / CFW + webMAN MOD
 - PlayStation 4 / GoldHEN
@@ -177,3 +177,10 @@ v1.3 development now runs on `develop-v1.3`; `main` remains the stable release l
 - Wii U child inventories remain attached to their canonical `00050000...` parent identifiers without false orphan warnings.
 - IGDB title search ignores line breaks plus ®/™ markers while preserving display titles.
 - `release_date` is the original game release; `platform_release_date` is the earliest IGDB release for the current GameVault platform.
+
+
+##### Wii / USB Loader GX via GameVault Wii U Exporter
+- Provider reads `/fs/vol/external01/wiiu/apps/GameVault-WiiU-Exporter/wii_usbloadergx.json` read-only through Wii U FTP.
+- `WII.cache` is the authoritative last USB Loader GX game-list cache; Game ID is the primary Wii identifier.
+- WBFS/ISO path and format are retained and existing `GXGameStatistics.cfg` PlayCount is imported when available.
+- After changing games on the vWii USB disk, launch USB Loader GX once and let the list finish loading before running the exporter, otherwise the cache may be stale.

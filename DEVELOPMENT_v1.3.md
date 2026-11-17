@@ -1,6 +1,6 @@
 # GameVault v1.3 development
 
-Current build: **v1.3.0-dev5**  
+Current build: **v1.3.0-dev6**  
 Branch: **develop-v1.3**  
 Container channel: **ghcr.io/domhit/gamevault:dev**
 
@@ -50,3 +50,11 @@ For each platform, identify authoritative installed-title databases/manifests be
 - Accepts both scalar and expanded-object `release_dates.platform` values when mapping platform releases.
 - Displays Original-Release and platform-specific release in the normal game detail view.
 - Existing IGDB bindings are refreshed with the current GameVault platform so platform release dates can be backfilled.
+
+
+#### dev6
+- Adds Nintendo Wii as a separate GameVault platform through the public GameVault Wii U Exporter v0.2.0 `wii_usbloadergx.json`.
+- Uses USB Loader GX `WII.cache` as the current installed-game inventory source: six-character Wii Game ID, cached title and exact `usb1:/wbfs/...` path.
+- Carries USB Loader GX PlayCount into GameVault history when provided.
+- Adds Wii / IGDB platform mapping and console-management UI support.
+- Keeps Wii U and Wii inventory as separate providers even when both JSON files are exposed through the same Wii U FTP server.
