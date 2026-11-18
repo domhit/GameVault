@@ -1,17 +1,17 @@
-# GameVault v1.2.0
+# GameVault v1.3.0
 
 GameVault is a self-hosted game collection, backup inventory and console-inventory application. It runs as a FastAPI web application with PostgreSQL persistence and is designed for Docker/Portainer deployments.
 
-## v1.2.0 release-candidate scope
+## v1.3.0 development
 
-v1.2.0 is the Sony + Xbox console-inventory milestone. The release candidate supports:
+v1.3.0 continues the Nintendo console-inventory development line on top of the validated v1.2.0 Sony + Xbox baseline. Existing supported console providers remain:
 
 - PlayStation 3 / CFW + webMAN MOD
 - PlayStation 4 / GoldHEN
 - Xbox 360 / Aurora
 - Xbox Classic / XBMC4Gamers
 
-Nintendo providers are intentionally deferred to the next development branch after v1.2.0 stable.
+Current v1.3 development targets Nintendo Switch / Atmosphere, Wii U CFW and Nintendo 3DS CFW. dev1 only establishes the new development/version/workflow baseline; dev2 introduces the Wii U / GameVault Exporter provider. Nintendo Switch and Nintendo 3DS providers follow in later builds.
 
 ## User interface
 
@@ -150,10 +150,10 @@ Console credentials are currently stored in PostgreSQL. Prefer anonymous/read-on
 The included GitHub Actions workflow currently builds:
 
 - `main` -> `ghcr.io/domhit/gamevault:latest`
-- `develop-v1.1` -> `ghcr.io/domhit/gamevault:dev`
+- `develop-v1.3` -> `ghcr.io/domhit/gamevault:dev`
 - `v*` tags -> matching version tag
 
-After v1.2.0 stable, development should move to a new Nintendo-focused branch rather than continuing the legacy `develop-v1.1` name.
+v1.3 development now runs on `develop-v1.3`; `main` remains the stable release line.
 
 ## Known limitations
 
@@ -162,4 +162,32 @@ After v1.2.0 stable, development should move to a new Nintendo-focused branch ra
 - PS3 network ISO size is not measurable through PS3 FTP; webMAN/ps3netsrv still provides availability.
 - Aurora RecentGames can retain ContentIds no longer present in the current `content.db`; those events stay unmapped.
 - Console credentials are not encrypted at rest in the current release candidate.
-- Nintendo Switch, Wii U and Nintendo 3DS providers are not part of v1.2.0.
+- Nintendo Switch, Wii U and Nintendo 3DS providers are the v1.3 development target and are not implemented in dev1 yet.
+
+
+#### Wii U / GameVault Exporter
+- Reads the exporter JSON read-only through Wii U FTP.
+- Default path: `/fs/vol/external01/wiiu/apps/GameVault-WiiU-Exporter/installed_titles.json`.
+- Base games become Wii U parent inventory rows; updates and DLC are retained as child content.
+- Wii U Title IDs are normalized to the `00050000...` base identifier for matching.
+- Publisher, region, Product Code and exporter diagnostics remain available as source metadata.
+
+
+#### Wii U dev3 refinements
+- Wii U child inventories remain attached to their canonical `00050000...` parent identifiers without false orphan warnings.
+- IGDB title search ignores line breaks plus ®/™ markers while preserving display titles.
+- `release_date` is the original game release; `platform_release_date` is the earliest IGDB release for the current GameVault platform.
+
+
+##### Wii / USB Loader GX via GameVault Wii U Exporter
+- Provider reads `/fs/vol/external01/wiiu/apps/GameVault-WiiU-Exporter/wii_usbloadergx.json` read-only through Wii U FTP.
+- `WII.cache` is the authoritative last USB Loader GX game-list cache; Game ID is the primary Wii identifier.
+- WBFS/ISO path and format are retained and existing `GXGameStatistics.cfg` PlayCount is imported when available.
+- After changing games on the vWii USB disk, launch USB Loader GX once and let the list finish loading before running the exporter, otherwise the cache may be stale.
+
+
+##### Nintendo 3DS / GameVault Exporter
+- Reads exporter schemaVersion 3 through FTP from `/3ds/GameVault-3DS-Exporter/installed_titles.json`.
+- Nintendo 3DS games become parent inventory rows; updates and DLC attach through the exported parent Title ID.
+- Installed sizes, NAND/SD media, region, publisher, SMDH names/descriptions and raw exporter diagnostics are retained.
+- System titles, TWL rows and known homebrew management utilities are excluded from the playable library.
