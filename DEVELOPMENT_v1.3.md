@@ -1,6 +1,6 @@
 # GameVault v1.3 development
 
-Current build: **v1.3.0-dev7**  
+Current build: **v1.3.0-dev8**  
 Branch: **develop-v1.3**  
 Container channel: **ghcr.io/domhit/gamevault:dev**
 
@@ -65,3 +65,11 @@ For each platform, identify authoritative installed-title databases/manifests be
 - Preserves the original WII.cache title in `history_raw_json` for traceability.
 - Keeps obvious Wii ROM hacks/mods out of automatic IGDB bulk matching; manual single-game assignment remains available and persists across scans.
 - Wii PlayCount fields from `wii_usbloadergx.json` continue to map into InstalledGame history when the exporter provides them.
+
+
+##### dev8
+- Adds Nintendo 3DS inventory through GameVault Nintendo 3DS Exporter v0.1.0 schemaVersion 3.
+- Reads `/3ds/GameVault-3DS-Exporter/installed_titles.json` read-only over FTP (default port 5000).
+- Imports playable CTR applications, attaches updates and DLC through `parentTitleId`, and preserves installed byte sizes plus SMDH metadata.
+- Ignores 3DS system titles, TWL system/application rows and known homebrew management tools.
+- Adds Nintendo 3DS to IGDB platform resolution, console management, platform cards and manual/bulk matching.
