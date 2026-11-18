@@ -9,11 +9,17 @@ v1.2.0 is the validated Sony + Xbox stable baseline on `main`. v1.3 work happens
 Active branch: `develop-v1.3`.
 
 Target environments:
-- Nintendo Switch / Atmosphere
+- Nintendo Switch / Atmosphere (deferred: test console currently unavailable)
 - Wii U CFW/jailbreak
 - Nintendo 3DS CFW
 
 First principle: identify authoritative installed-title databases/manifests before directory crawling. Reuse the common ConsoleProvider + InstalledGame model, manual matching, history-source separation and diagnostic pattern established in v1.2.0.
+
+## Future console and offline-library support
+
+- Sony PlayStation Vita CFW inventory over the network; first investigate authoritative installed-title metadata before implementing a provider.
+- Nintendo Switch / Atmosphere inventory remains planned but deferred until the console is available for real-device testing.
+- Add manual game-entry workflows for consoles without a practical network inventory path, initially Nintendo 64, Super Nintendo (SNES) and Game Boy. These should integrate with the same IGDB metadata, cover and collection model without pretending to be console-scanned installations.
 
 ## Post-v1.2 technical improvements
 
