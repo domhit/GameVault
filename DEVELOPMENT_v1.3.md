@@ -1,6 +1,6 @@
 # GameVault v1.3 development
 
-Current build: **v1.3.0-dev10**  
+Current build: **v1.3.0 release**  
 Branch: **develop-v1.3**  
 Container channel: **ghcr.io/domhit/gamevault:dev**
 
@@ -73,3 +73,9 @@ For each platform, identify authoritative installed-title databases/manifests be
 - Imports playable CTR applications, attaches updates and DLC through `parentTitleId`, and preserves installed byte sizes plus SMDH metadata.
 - Ignores 3DS system titles, TWL system/application rows and known homebrew management tools.
 - Adds Nintendo 3DS to IGDB platform resolution, console management, platform cards and manual/bulk matching.
+
+
+##### v1.3.0 release
+- Finalizes Nintendo Wii U, Wii/vWii and Nintendo 3DS inventory support developed on `develop-v1.3`.
+- Applies manufacturer color families: PlayStation blue, Xbox green and Nintendo red.
+- Adds future backlog items for Nintendo Switch, PlayStation Vita, manual retro-console library entry and Wii U/vWii installed-size detection.

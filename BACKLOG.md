@@ -23,6 +23,7 @@ First principle: identify authoritative installed-title databases/manifests befo
 
 ## Post-v1.2 technical improvements
 
+- Determine reliable installed-size data for Wii U titles and vWii/Wii content, ideally from authoritative console/file-system metadata without expensive full directory walks.
 - Console timezone property and canonical UTC normalization for every provider, especially Aurora wall-clock history.
 - Optional ps3netsrv/NAS storage mapping so `/netX` PS3 games can obtain sizes directly from the NAS.
 - Credential encryption/secret-store strategy; current console credentials are stored in PostgreSQL.
