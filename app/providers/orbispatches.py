@@ -2,7 +2,7 @@ import ast, os, re, requests
 from bs4 import BeautifulSoup
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
 BASE='https://orbispatches.com'
-UA={'User-Agent':'GameVault/1.4.0-dev4 (+https://github.com/domhit/GameVault)'}
+UA={'User-Agent':'GameVault/1.4.0-dev5 (+https://github.com/domhit/GameVault)'}
 def normalize_cusa(v):
  s=re.sub(r'[^A-Z0-9]','',str(v or '').upper())
  return s if re.fullmatch(r'CUSA\d{5}',s) else None

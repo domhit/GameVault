@@ -54,3 +54,10 @@ First principle: identify authoritative installed-title databases/manifests befo
 - Disc and Cartridge have dedicated library filters while the generic Physical owned filter remains available.
 - New and existing games can edit the physical medium type.
 - Retro platforms default to Cartridge; disc-based platforms default to Disc.
+
+
+### v1.4.0-dev5
+- Adds a library view switch between platform editions and cross-platform grouped games.
+- Groups only entries sharing the same accepted IGDB provider ID; unmatched/manual entries remain separate to avoid false merges.
+- Group cards show platform badges, physical-edition count and console-installation count.
+- Existing edition records, identifiers, covers, installations and physical ownership remain unchanged.
