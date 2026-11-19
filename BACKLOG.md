@@ -40,3 +40,10 @@ First principle: identify authoritative installed-title databases/manifests befo
 - Group the same game across platforms into one logical game identity while preserving platform editions, identifiers, packages, console installations and metadata.
 - Saved filters and tag manager/bulk tagging.
 - Backup/restore bundle for PostgreSQL dump, covers, JSON/CSV exports and non-secret configuration.
+
+
+### v1.4.0-dev2
+- Manual creation UI now includes Nintendo 64, Super Nintendo and Game Boy.
+- Retro entries default to Cartridge + physical ownership, while ROM/Virtual Console/Digital remain distinct formats.
+- Physical ownership is persisted at game creation and remains independently filterable for all platforms.
+- Newly created games open IGDB search immediately.
