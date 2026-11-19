@@ -67,3 +67,9 @@ First principle: identify authoritative installed-title databases/manifests befo
 - Cross-Platform view now only shows IGDB-linked games represented on at least two distinct platforms.
 - Multiple editions on the same platform no longer qualify as cross-platform entries.
 - Renames the grouped-library selector to `Cross-Platform` for clarity.
+
+
+#### v1.4.0-dev7
+- Cross-Platform platform badges are clickable console buttons.
+- Buttons keep platform colors and open the exact platform edition.
+- Group-card clicks still open the representative edition; button clicks stop propagation.
