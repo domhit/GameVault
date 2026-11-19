@@ -47,3 +47,10 @@ First principle: identify authoritative installed-title databases/manifests befo
 - Retro entries default to Cartridge + physical ownership, while ROM/Virtual Console/Digital remain distinct formats.
 - Physical ownership is persisted at game creation and remains independently filterable for all platforms.
 - Newly created games open IGDB search immediately.
+
+
+### v1.4.0-dev4
+- Physical ownership can now distinguish Disc from Cartridge/Module independently of install/backup format.
+- Disc and Cartridge have dedicated library filters while the generic Physical owned filter remains available.
+- New and existing games can edit the physical medium type.
+- Retro platforms default to Cartridge; disc-based platforms default to Disc.
