@@ -61,3 +61,9 @@ First principle: identify authoritative installed-title databases/manifests befo
 - Groups only entries sharing the same accepted IGDB provider ID; unmatched/manual entries remain separate to avoid false merges.
 - Group cards show platform badges, physical-edition count and console-installation count.
 - Existing edition records, identifiers, covers, installations and physical ownership remain unchanged.
+
+
+### v1.4.0-dev6
+- Cross-Platform view now only shows IGDB-linked games represented on at least two distinct platforms.
+- Multiple editions on the same platform no longer qualify as cross-platform entries.
+- Renames the grouped-library selector to `Cross-Platform` for clarity.
