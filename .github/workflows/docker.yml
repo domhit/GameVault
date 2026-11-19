@@ -3,7 +3,7 @@ on:
   push:
     branches: 
       - main
-      - develop-v1.3
+      - develop-v1.4
     tags: ['v*']
   workflow_dispatch:
 permissions:
