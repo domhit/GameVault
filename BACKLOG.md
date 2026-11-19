@@ -1,4 +1,4 @@
-# GameVault Backlog - v1.3 development
+# GameVault Backlog - v1.4 development
 
 ## Stable baseline
 
@@ -6,7 +6,7 @@ v1.2.0 is the validated Sony + Xbox stable baseline on `main`. v1.3 work happens
 
 ## v1.3 - Nintendo console inventory
 
-Active branch: `develop-v1.3`.
+Active branch: `develop-v1.4`.
 
 Target environments:
 - Nintendo Switch / Atmosphere (deferred: test console currently unavailable)
@@ -35,6 +35,8 @@ First principle: identify authoritative installed-title databases/manifests befo
 
 ## Cross-platform library model
 
+- Manual game entry for Nintendo 64, Super Nintendo (SNES) and Game Boy with IGDB lookup; distinguish physical cartridge ownership from VC/ROM/digital availability.
+- General physical-media ownership flag/filter for all platforms (disc or cartridge), independent of digital/backup/install state.
 - Group the same game across platforms into one logical game identity while preserving platform editions, identifiers, packages, console installations and metadata.
 - Saved filters and tag manager/bulk tagging.
 - Backup/restore bundle for PostgreSQL dump, covers, JSON/CSV exports and non-secret configuration.
