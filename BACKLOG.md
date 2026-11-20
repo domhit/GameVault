@@ -81,3 +81,9 @@ First principle: identify authoritative installed-title databases/manifests befo
 - Virtual Console is a dedicated format/filter and IGDB lookup uses the original platform when specified.
 - VC entries retain one Game record and one console installation; no synthetic duplicate game is created.
 - Cards/details show original platform in addition to the actual playable platform.
+
+
+####### v1.4.0-dev9
+- Resolves platform release dates against the concrete GameVault platform.
+- Derives original release platforms from all IGDB release dates using a 365-day launch window.
+- Supports multiple original platforms while retaining the existing single-value field for compatibility.

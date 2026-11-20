@@ -1,7 +1,7 @@
 import json, os, re, requests
 from pathlib import Path
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
-UA={'User-Agent':'GameVault/1.4.0-dev8 (+https://github.com/domhit/GameVault)'}
+UA={'User-Agent':'GameVault/1.4.0-dev9 (+https://github.com/domhit/GameVault)'}
 PS4_CATALOG='https://raw.githubusercontent.com/Dinos17/FPKGi-Catalog-Hub/main/ps4/games.json'
 
 def norm_id(v): return re.sub(r'[^A-Z0-9]','',str(v or '').upper())
