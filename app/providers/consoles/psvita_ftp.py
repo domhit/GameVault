@@ -17,12 +17,29 @@ class PSVitaFTPProvider(ConsoleProvider):
  def _read(self,ftp,path):
   b=BytesIO();ftp.retrbinary('RETR '+path,b.write);return b.getvalue()
  def _names(self,ftp,path,errors=None):
+  # FTPVita does not implement NLST/LIST (502). Directory enumeration works via
+  # MLSD after CWD into the target directory. Restore PWD after each probe.
+  previous=None
   try:
-   rows=ftp.nlst(path)
-   return sorted({os.path.basename(str(x).rstrip('/')) for x in rows if os.path.basename(str(x).rstrip('/')) not in ('','.','..')})
+   try: previous=ftp.pwd()
+   except: previous='/'
+   ftp.cwd(path)
+   rows=[]
+   try:
+    for name,facts in ftp.mlsd():
+     if name not in ('','.','..') and (not facts or facts.get('type') in (None,'dir','cdir','pdir')):rows.append(name)
+   except Exception as mlsd_error:
+    if errors is not None:errors.append(f'{path}: MLSD {type(mlsd_error).__name__}: {mlsd_error}')
+   return sorted(set(rows))
   except Exception as e:
-   if errors is not None:errors.append(f'{path}: {type(e).__name__}: {e}')
+   if errors is not None:errors.append(f'{path}: CWD {type(e).__name__}: {e}')
    return []
+  finally:
+   if previous is not None:
+    try:ftp.cwd(previous)
+    except:
+     try:ftp.cwd('/')
+     except:pass
  def _exists(self,ftp,path):
   try:self._read(ftp,path);return True
   except:return False
@@ -44,7 +61,7 @@ class PSVitaFTPProvider(ConsoleProvider):
   except Exception as e:out['error']=f'{type(e).__name__}: {e}'
   out['ok']=out['ftp']['ok'] and out['app_db']['ok'];return out
  def scan(self):
-  diag={'database_path':self.database_path,'bubble_rows':0,'native_candidates':0,'games':0,'updates':0,'dlc':0,'system_ignored':0,'homebrew_ignored':0,'pspemu_ignored':0,'missing_app_sfo':0,'mounts':{},'errors':[]};items=[]
+  diag={'database_path':self.database_path,'directory_method':'CWD+MLSD','bubble_rows':0,'native_candidates':0,'games':0,'updates':0,'dlc':0,'system_ignored':0,'homebrew_ignored':0,'pspemu_ignored':0,'missing_app_sfo':0,'mounts':{},'errors':[]};items=[]
   with self.connect() as ftp:
    raw=self._read(ftp,self.database_path);c,p=self._open_db(raw)
    try:
