@@ -65,6 +65,53 @@ class PSVitaFTPProvider(ConsoleProvider):
    finally:c.close();os.unlink(p)
   except Exception as e:out['error']=f'{type(e).__name__}: {e}'
   out['ok']=out['ftp']['ok'] and out['app_db']['ok'];return out
+ def _list_details(self,ftp,path):
+  previous=None;rows=[]
+  try:
+   try:previous=ftp.pwd()
+   except:previous='/'
+   ftp.cwd(path);lines=[];ftp.retrlines('LIST',lines.append)
+   for line in lines:
+    line=str(line or '').strip()
+    if not line:continue
+    parts=line.split(None,8);name=parts[8] if len(parts)>=9 else line.split()[-1]
+    if name in ('','.','..'):continue
+    is_dir=line.startswith('d');size=None
+    if len(parts)>=5 and str(parts[4]).isdigit():size=int(parts[4])
+    rows.append({'name':name.rstrip('/'),'is_dir':is_dir,'size':size})
+   return rows,None
+  except Exception as e:return [],f'{type(e).__name__}: {e}'
+  finally:
+   if previous is not None:
+    try:ftp.cwd(previous)
+    except:
+     try:ftp.cwd('/')
+     except:pass
+ def _tree_size(self,ftp,path,seen=None):
+  seen=seen or set()
+  if path in seen:return {'ok':False,'bytes':0,'files':0,'dirs':0,'error':'cycle'}
+  seen.add(path);rows,error=self._list_details(ftp,path)
+  if error:return {'ok':False,'bytes':0,'files':0,'dirs':0,'error':error}
+  total=files=dirs=0;errors=[]
+  for row in rows:
+   child=path.rstrip('/')+'/'+row['name']
+   if row['is_dir']:
+    r=self._tree_size(ftp,child,seen);total+=r['bytes'];files+=r['files'];dirs+=1+r['dirs']
+    if not r['ok'] and r.get('error'):errors.append(r['error'])
+   else:
+    size=row['size']
+    if size is None:
+     try:size=ftp.size(child)
+     except Exception as e:errors.append(f'{child}: {type(e).__name__}: {e}');size=0
+    total+=int(size or 0);files+=1
+  return {'ok':not errors or total>0,'bytes':total,'files':files,'dirs':dirs,'error':'; '.join(errors[:10]) or None}
+ def calculate_sizes(self,records):
+  results=[]
+  with self.connect() as ftp:
+   for rec in records:
+    path=str(rec.get('path') or '')
+    r=self._tree_size(ftp,path,set());results.append({'id':rec.get('id'),'path':path,'ok':r['ok'],'size_bytes':r['bytes'],'files':r['files'],'dirs':r['dirs'],'error':r['error']})
+  return results
  def scan(self):
   diag={'database_path':self.database_path,'directory_method':'app.db ID-family routing + direct PCS* PARAM.SFO RETR; LIST only for DLC children','bubble_rows':0,'native_candidates':0,'games':0,'updates':0,'dlc':0,'system_ignored':0,'homebrew_ignored':0,'pspemu_ignored':0,'missing_app_sfo':0,'mounts':{},'errors':[]};items=[]
   with self.connect() as ftp:
