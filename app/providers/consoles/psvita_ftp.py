@@ -110,6 +110,7 @@ class PSVitaFTPProvider(ConsoleProvider):
   with self.connect() as ftp:
    for rec in records:
     path=str(rec.get('path') or '')
+    if path.lower().endswith('/sce_sys/param.sfo'):path=path[:-len('/sce_sys/param.sfo')]
     r=self._tree_size(ftp,path,set());results.append({'id':rec.get('id'),'path':path,'ok':r['ok'],'size_bytes':r['bytes'],'files':r['files'],'dirs':r['dirs'],'error':r['error']})
   return results
  def scan(self):
@@ -171,7 +172,7 @@ class PSVitaFTPProvider(ConsoleProvider):
     patch_path=f'{mount}/patch/{tid}/sce_sys/param.sfo';patch=self._sfo(ftp,patch_path);installed_ver=base_ver
     if patch and str(patch.get('CATEGORY') or '').lower()=='gp':
      installed_ver=str(patch.get('APP_VER') or patch.get('VERSION') or '').strip() or base_ver
-     up=InstalledTitle('PlayStation Vita',tid,f'{name} Update',installed_ver,'Title Update','PS Vita FTP PARAM.SFO',patch_path,str(patch.get('CONTENT_ID') or content_id or '').strip() or None,'Title Update',mount.strip('/').rstrip(':')).to_dict();up['source_parent_present']=True;items.append(up);diag['updates']+=1
+     patch_root=f'{mount}/patch/{tid}';up=InstalledTitle('PlayStation Vita',tid,f'{name} Update',installed_ver,'Title Update','PS Vita FTP PARAM.SFO',patch_root,str(patch.get('CONTENT_ID') or content_id or '').strip() or None,'Title Update',mount.strip('/').rstrip(':')).to_dict();up['history_raw_json']={'psvita_patch':{'param_sfo_path':patch_path,'category':'gp','content_id':str(patch.get('CONTENT_ID') or content_id or '').strip() or None}};up['source_parent_present']=True;items.append(up);diag['updates']+=1
     game=InstalledTitle('PlayStation Vita',tid,name,installed_ver,'PS Vita Game','PS Vita app.db + PARAM.SFO',f'{mount}/app/{tid}',content_id,'PS Vita Game',mount.strip('/').rstrip(':')).to_dict();game['history_raw_json']={'psvita_metadata':{'base_version':base_ver,'installed_version':installed_ver,'category':cat or None,'content_id':content_id,'np_communication_id':sfo.get('NP_COMMUNICATION_ID'),'psp2_disp_ver':sfo.get('PSP2_DISP_VER'),'psp2_system_ver':sfo.get('PSP2_SYSTEM_VER'),'pubtoolinfo':sfo.get('PUBTOOLINFO'),'app_mount':mount.strip('/'),'shell_title':title}};items.append(game);diag['games']+=1
     # Add-on folders are child content. Each SFO exposes CATEGORY=ac, parent TITLE_ID and a unique CONTENT_ID/title.
     add_root=f'{mount}/addcont/{tid}'
