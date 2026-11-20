@@ -1,95 +1,28 @@
-# GameVault Backlog - v1.4 development
+# GameVault Backlog
 
-## Stable baseline
+## Console inventory
 
-v1.2.0 is the validated Sony + Xbox stable baseline on `main`. v1.3 work happens on `develop-v1.3`.
+- **PlayStation Vita CFW**: investigate authoritative installed-title metadata on real hardware before implementing a provider/exporter. Target data includes Title ID/Content ID, title, version, DLC/update relationships, storage and installed size where reliable.
+- **Nintendo Switch / Atmosphere**: deferred until the test console is available again. Follow the same real-hardware-first provider approach.
+- Determine reliable installed-size data for **Wii U** titles and **Wii/vWii** content without expensive full directory walks where possible.
+- Investigate reliable Xbox 360 DLC inventory and active/disabled Title Update state.
+- Optional `ps3netsrv`/NAS mapping so `/netX` PS3 games can obtain sizes from the NAS.
 
-## v1.3 - Nintendo console inventory
+## Library and metadata
 
-Active branch: `develop-v1.4`.
-
-Target environments:
-- Nintendo Switch / Atmosphere (deferred: test console currently unavailable)
-- Wii U CFW/jailbreak
-- Nintendo 3DS CFW
-
-First principle: identify authoritative installed-title databases/manifests before directory crawling. Reuse the common ConsoleProvider + InstalledGame model, manual matching, history-source separation and diagnostic pattern established in v1.2.0.
-
-## Future console and offline-library support
-
-- Sony PlayStation Vita CFW inventory over the network; first investigate authoritative installed-title metadata before implementing a provider.
-- Nintendo Switch / Atmosphere inventory remains planned but deferred until the console is available for real-device testing.
-- Add manual game-entry workflows for consoles without a practical network inventory path, initially Nintendo 64, Super Nintendo (SNES) and Game Boy. These should integrate with the same IGDB metadata, cover and collection model without pretending to be console-scanned installations.
-
-## Post-v1.2 technical improvements
-
-- Determine reliable installed-size data for Wii U titles and vWii/Wii content, ideally from authoritative console/file-system metadata without expensive full directory walks.
-- Console timezone property and canonical UTC normalization for every provider, especially Aurora wall-clock history.
-- Optional ps3netsrv/NAS storage mapping so `/netX` PS3 games can obtain sizes directly from the NAS.
-- Credential encryption/secret-store strategy; current console credentials are stored in PostgreSQL.
-- Background/cancellable console size scans if synchronous scans become too slow.
-- Content-change detection to avoid recalculating unchanged folder sizes.
-- Further PS3 MMS field/type decoding and optional SaveData/trophy historical-footprint support without conflating SaveData timestamps with Last Played.
-- Investigate reliable Xbox 360 DLC source and active/disabled TU state.
+- Extend manual/offline platform support beyond Nintendo 64, SNES and Game Boy where useful.
+- Saved filters and tag manager / bulk tagging.
+- Continue improving platform-specific/original release handling for unusual ports, remasters and Virtual Console/inject edge cases when real examples appear.
 - Restore/extend remote update availability where authoritative public sources exist.
 
-## Cross-platform library model
+## Backup and operations
 
-- Manual game entry for Nintendo 64, Super Nintendo (SNES) and Game Boy with IGDB lookup; distinguish physical cartridge ownership from VC/ROM/digital availability.
-- General physical-media ownership flag/filter for all platforms (disc or cartridge), independent of digital/backup/install state.
-- Group the same game across platforms into one logical game identity while preserving platform editions, identifiers, packages, console installations and metadata.
-- Saved filters and tag manager/bulk tagging.
 - Backup/restore bundle for PostgreSQL dump, covers, JSON/CSV exports and non-secret configuration.
+- Credential encryption / secret-store strategy; console credentials are currently stored in PostgreSQL.
+- Background/cancellable console size scans if synchronous scans become too slow.
+- Content-change detection to avoid recalculating unchanged folder sizes.
 
+## Historical / research
 
-### v1.4.0-dev2
-- Manual creation UI now includes Nintendo 64, Super Nintendo and Game Boy.
-- Retro entries default to Cartridge + physical ownership, while ROM/Virtual Console/Digital remain distinct formats.
-- Physical ownership is persisted at game creation and remains independently filterable for all platforms.
-- Newly created games open IGDB search immediately.
-
-
-### v1.4.0-dev4
-- Physical ownership can now distinguish Disc from Cartridge/Module independently of install/backup format.
-- Disc and Cartridge have dedicated library filters while the generic Physical owned filter remains available.
-- New and existing games can edit the physical medium type.
-- Retro platforms default to Cartridge; disc-based platforms default to Disc.
-
-
-### v1.4.0-dev5
-- Adds a library view switch between platform editions and cross-platform grouped games.
-- Groups only entries sharing the same accepted IGDB provider ID; unmatched/manual entries remain separate to avoid false merges.
-- Group cards show platform badges, physical-edition count and console-installation count.
-- Existing edition records, identifiers, covers, installations and physical ownership remain unchanged.
-
-
-### v1.4.0-dev6
-- Cross-Platform view now only shows IGDB-linked games represented on at least two distinct platforms.
-- Multiple editions on the same platform no longer qualify as cross-platform entries.
-- Renames the grouped-library selector to `Cross-Platform` for clarity.
-
-
-#### v1.4.0-dev7
-- Cross-Platform platform badges are clickable console buttons.
-- Buttons keep platform colors and open the exact platform edition.
-- Group-card clicks still open the representative edition; button clicks stop propagation.
-
-
-##### v1.4.0-dev8
-- Adds `original_platform` so Virtual Console/legacy ports remain listed on the console where they are playable while also appearing under their source platform.
-- Platform filtering matches either playable/current platform or original platform; a separate original-platform filter is available.
-- Virtual Console is a dedicated format/filter and IGDB lookup uses the original platform when specified.
-- VC entries retain one Game record and one console installation; no synthetic duplicate game is created.
-- Cards/details show original platform in addition to the actual playable platform.
-
-
-####### v1.4.0-dev10
-- Resolves platform release dates against the concrete GameVault platform.
-- Derives original release platforms from all IGDB release dates using a 365-day launch window.
-- Supports multiple original platforms while retaining the existing single-value field for compatibility.
-
-
-######### v1.4.0-dev11
-- Prevents original-platform badges from being clipped in narrow library cards.
-- Hides Original badges/labels when the current edition belongs to the 365-day original launch window.
-- Later ports and Virtual Console editions continue to show their derived original platform(s).
+- Further PS3 MMS field/type decoding and optional SaveData/trophy historical-footprint support without conflating SaveData timestamps with Last Played.
+- Console timezone property and canonical UTC normalization for providers that expose local wall-clock timestamps, especially Aurora history.
