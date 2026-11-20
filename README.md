@@ -17,6 +17,7 @@ GameVault v1.5 development starts from the stable v1.4.0 release. GameVault is a
 | Platform | Inventory source |
 | --- | --- |
 | PlayStation 3 | CFW FTP + webMAN MOD + Sony MMS history |
+| PlayStation Vita | VitaShell FTP (`ur0:/shell/db/app.db` + `PARAM.SFO`) |
 | PlayStation 4 | GoldHEN FTP (`app.db` / `addcont.db`) |
 | Xbox 360 | Aurora (`content.db` / `settings.db`) |
 | Xbox Classic | XBMC4Gamers (`MyPrograms6.db`) |

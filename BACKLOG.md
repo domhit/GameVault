@@ -6,7 +6,7 @@
 
 ## Console inventory
 
-- **PlayStation Vita CFW**: investigate authoritative installed-title metadata on real hardware before implementing a provider/exporter. Target data includes Title ID/Content ID, title, version, DLC/update relationships, storage and installed size where reliable.
+- **PlayStation Vita CFW**: native Vita inventory provider implemented in dev2 from `app.db` + App/Patch/DLC `PARAM.SFO`; next validate real-hardware scan results, then add sizes and evaluate PSP/PS1/RetroArch as separate inventory streams.
 - **Nintendo Switch / Atmosphere**: deferred until the test console is available again. Follow the same real-hardware-first provider approach.
 - Determine reliable installed-size data for **Wii U** titles and **Wii/vWii** content without expensive full directory walks where possible.
 - Investigate reliable Xbox 360 DLC inventory and active/disabled Title Update state.
