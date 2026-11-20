@@ -79,7 +79,7 @@ class PSVitaFTPProvider(ConsoleProvider):
     path=f'/ux0:/pspemu/PSP/GAME/{tid}'
     names=self._names(ftp,path,None)
     if names:pspemu_present[tid]={'path':path,'entries':len(names),'sample':names[:5]}
-   diag['pspemu_present']=pspemu_present
+   diag['pspemu_present']=pspemu_present;diag['pspemu_nonempty']=len(pspemu_present);diag['pspemu_empty_or_missing']=sum(1 for tid in bubbles if PSPEMU_ID_RE.fullmatch(tid) and tid not in pspemu_present)
    # File system is installation truth; app.db supplies the Vita shell title/bubble inventory.
    # Hardware-validated routing:
    # PCS* -> /ux0:/app/<TITLE_ID>/sce_sys/param.sfo
@@ -109,7 +109,7 @@ class PSVitaFTPProvider(ConsoleProvider):
     if tid in HOMEBREW_IDS or any(h in title.casefold() for h in HOMEBREW_HINTS):diag['homebrew_ignored']+=1;continue
     if PSPEMU_ID_RE.fullmatch(tid):
      if tid in pspemu_present:
-      item=InstalledTitle('PlayStation 1',tid,title,None,'PS1 via PSPemu','PS Vita app.db + PSPemu',pspemu_present[tid]['path'],tid,'PS1 via PSPemu','ux0').to_dict();item['history_raw_json']={'psvita_pspemu':pspemu_present[tid]};items.append(item);diag.setdefault('pspemu_games',0);diag['pspemu_games']+=1
+      item=InstalledTitle('PlayStation 1',tid,title,None,'PS1 Classic on Vita','PS Vita app.db + PSPemu',pspemu_present[tid]['path'],tid,'PS1 Classic on Vita','ux0').to_dict();item['history_raw_json']={'psvita_pspemu':{'host_platform':'PlayStation Vita','runtime':'PSPemu','app_db_title':title,**pspemu_present[tid]}};item['metadata_hint']={'media_format':'Digital','storefront':'PS1 Classic / PSPemu','host_platform':'PlayStation Vita'};items.append(item);diag.setdefault('pspemu_games',0);diag['pspemu_games']+=1
      else:diag['pspemu_ignored']+=1
      continue
     if tid in FANPORT_IDS or tid in PSM_IDS:continue
