@@ -83,7 +83,7 @@ First principle: identify authoritative installed-title databases/manifests befo
 - Cards/details show original platform in addition to the actual playable platform.
 
 
-####### v1.4.0-dev9
+####### v1.4.0-dev10
 - Resolves platform release dates against the concrete GameVault platform.
 - Derives original release platforms from all IGDB release dates using a 365-day launch window.
 - Supports multiple original platforms while retaining the existing single-value field for compatibility.
