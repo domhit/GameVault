@@ -1,5 +1,9 @@
 # GameVault Backlog
 
+## Active development
+
+- **v1.5 / PlayStation Vita** on persistent branch `develop`: real-hardware discovery first. Identify authoritative installed-title data, Title ID/Content ID, versions, DLC/update relationships, storage and installed sizes before choosing FTP-only integration or a dedicated exporter.
+
 ## Console inventory
 
 - **PlayStation Vita CFW**: investigate authoritative installed-title metadata on real hardware before implementing a provider/exporter. Target data includes Title ID/Content ID, title, version, DLC/update relationships, storage and installed size where reliable.
