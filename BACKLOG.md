@@ -73,3 +73,11 @@ First principle: identify authoritative installed-title databases/manifests befo
 - Cross-Platform platform badges are clickable console buttons.
 - Buttons keep platform colors and open the exact platform edition.
 - Group-card clicks still open the representative edition; button clicks stop propagation.
+
+
+##### v1.4.0-dev8
+- Adds `original_platform` so Virtual Console/legacy ports remain listed on the console where they are playable while also appearing under their source platform.
+- Platform filtering matches either playable/current platform or original platform; a separate original-platform filter is available.
+- Virtual Console is a dedicated format/filter and IGDB lookup uses the original platform when specified.
+- VC entries retain one Game record and one console installation; no synthetic duplicate game is created.
+- Cards/details show original platform in addition to the actual playable platform.
