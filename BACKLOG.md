@@ -32,11 +32,17 @@
 - Console timezone property and canonical UTC normalization for providers that expose local wall-clock timestamps, especially Aurora history.
 
 
-### v1.5.0-dev4
+### v1.5.0-dev5
 - Fix VitaShell FTP mount paths to use `/ux0:`, `/uma0:`, `/imc0:` and `/ur0:` exactly as exposed by FTPVita.
 - Vita scan diagnostics now report the probed path and FTP listing errors instead of silently returning zero directories.
 
 
-### v1.5.0-dev4
+### v1.5.0-dev5
 - Replace unsupported FTPVita `NLST` directory enumeration with `CWD` + `MLSD`.
 - Restore the previous FTP working directory after every Vita directory probe and report CWD/MLSD failures separately.
+
+
+### v1.5.0-dev5
+- Remove the Vita base-game dependency on unsupported FTP directory listing commands.
+- Use the 85 Title IDs from `app.db` and directly probe each mount's `app/{TITLE_ID}/sce_sys/param.sfo` via RETR.
+- Retain classic `LIST` only as a best-effort enumeration method for DLC child folders.

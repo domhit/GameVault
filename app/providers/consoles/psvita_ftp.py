@@ -17,22 +17,22 @@ class PSVitaFTPProvider(ConsoleProvider):
  def _read(self,ftp,path):
   b=BytesIO();ftp.retrbinary('RETR '+path,b.write);return b.getvalue()
  def _names(self,ftp,path,errors=None):
-  # FTPVita does not implement NLST/LIST (502). Directory enumeration works via
-  # MLSD after CWD into the target directory. Restore PWD after each probe.
+  # FTPVita exposes RETR/CWD but may not implement NLST or MLSD. Try a classic
+  # LIST data transfer only where child enumeration is unavoidable (addcont).
   previous=None
   try:
-   try: previous=ftp.pwd()
-   except: previous='/'
-   ftp.cwd(path)
-   rows=[]
-   try:
-    for name,facts in ftp.mlsd():
-     if name not in ('','.','..') and (not facts or facts.get('type') in (None,'dir','cdir','pdir')):rows.append(name)
-   except Exception as mlsd_error:
-    if errors is not None:errors.append(f'{path}: MLSD {type(mlsd_error).__name__}: {mlsd_error}')
-   return sorted(set(rows))
+   try:previous=ftp.pwd()
+   except:previous='/'
+   ftp.cwd(path);lines=[];ftp.retrlines('LIST',lines.append);names=[]
+   for line in lines:
+    line=str(line or '').strip()
+    if not line:continue
+    # Unix-like FTP listings: permissions ... name. Preserve names containing spaces.
+    parts=line.split(None,8);name=parts[8] if len(parts)>=9 else line.split()[-1]
+    if name not in ('','.','..'):names.append(name.rstrip('/'))
+   return sorted(set(names))
   except Exception as e:
-   if errors is not None:errors.append(f'{path}: CWD {type(e).__name__}: {e}')
+   if errors is not None:errors.append(f'{path}: LIST {type(e).__name__}: {e}')
    return []
   finally:
    if previous is not None:
@@ -61,7 +61,7 @@ class PSVitaFTPProvider(ConsoleProvider):
   except Exception as e:out['error']=f'{type(e).__name__}: {e}'
   out['ok']=out['ftp']['ok'] and out['app_db']['ok'];return out
  def scan(self):
-  diag={'database_path':self.database_path,'directory_method':'CWD+MLSD','bubble_rows':0,'native_candidates':0,'games':0,'updates':0,'dlc':0,'system_ignored':0,'homebrew_ignored':0,'pspemu_ignored':0,'missing_app_sfo':0,'mounts':{},'errors':[]};items=[]
+  diag={'database_path':self.database_path,'directory_method':'app.db Title IDs + direct PARAM.SFO RETR; LIST only for DLC children','bubble_rows':0,'native_candidates':0,'games':0,'updates':0,'dlc':0,'system_ignored':0,'homebrew_ignored':0,'pspemu_ignored':0,'missing_app_sfo':0,'mounts':{},'errors':[]};items=[]
   with self.connect() as ftp:
    raw=self._read(ftp,self.database_path);c,p=self._open_db(raw)
    try:
@@ -69,10 +69,15 @@ class PSVitaFTPProvider(ConsoleProvider):
    finally:c.close();os.unlink(p)
    bubbles={str(r['titleId'] or '').upper():str(r['title'] or '').strip() for r in rows}
    # File system is installation truth; app.db supplies the Vita shell title/bubble inventory.
-   apps={}
+   # app.db provides known Title IDs. Probe each exact PARAM.SFO directly on
+   # every mount; RETR is supported by FTPVita and avoids unsupported directory lists.
+   apps={};probe_counts={mount:0 for mount in MOUNTS}
+   for tid in bubbles:
+    for mount in MOUNTS:
+     path=f'{mount}/app/{tid}/sce_sys/param.sfo'
+     if self._exists(ftp,path):apps.setdefault(tid,[]).append(mount);probe_counts[mount]+=1
    for mount in MOUNTS:
-    names=self._names(ftp,f'{mount}/app',diag['errors']);diag['mounts'][mount.strip('/')]={'path':f'{mount}/app','app_dirs':len(names)}
-    for tid in names:apps.setdefault(tid.upper(),[]).append(mount)
+    diag['mounts'][mount.strip('/')]={'path':f'{mount}/app','method':'direct PARAM.SFO probe','app_dirs':probe_counts[mount]}
    for tid,title in bubbles.items():
     if tid.startswith('NPXS'):diag['system_ignored']+=1;continue
     if tid in HOMEBREW_IDS or any(h in title.casefold() for h in HOMEBREW_HINTS):diag['homebrew_ignored']+=1;continue
@@ -92,7 +97,9 @@ class PSVitaFTPProvider(ConsoleProvider):
     game=InstalledTitle('PlayStation Vita',tid,name,installed_ver,'PS Vita Game','PS Vita app.db + PARAM.SFO',f'{mount}/app/{tid}',content_id,'PS Vita Game',mount.strip('/').rstrip(':')).to_dict();game['history_raw_json']={'psvita_metadata':{'base_version':base_ver,'installed_version':installed_ver,'category':cat or None,'content_id':content_id,'np_communication_id':sfo.get('NP_COMMUNICATION_ID'),'psp2_disp_ver':sfo.get('PSP2_DISP_VER'),'psp2_system_ver':sfo.get('PSP2_SYSTEM_VER'),'pubtoolinfo':sfo.get('PUBTOOLINFO'),'app_mount':mount.strip('/'),'shell_title':title}};items.append(game);diag['games']+=1
     # Add-on folders are child content. Each SFO exposes CATEGORY=ac, parent TITLE_ID and a unique CONTENT_ID/title.
     add_root=f'{mount}/addcont/{tid}'
-    for folder in self._names(ftp,add_root,diag['errors']):
+    dlc_folders=self._names(ftp,add_root,None)
+    if dlc_folders:diag.setdefault('addcont_parents',{})[tid]=len(dlc_folders)
+    for folder in dlc_folders:
      dsfo_path=f'{add_root}/{folder}/sce_sys/param.sfo';dsfo=self._sfo(ftp,dsfo_path)
      if not dsfo or str(dsfo.get('CATEGORY') or '').lower()!='ac':continue
      parent=str(dsfo.get('TITLE_ID') or tid).upper();dtitle=str(dsfo.get('TITLE') or folder).replace('®','').replace('™','').strip();dver=str(dsfo.get('APP_VER') or dsfo.get('VERSION') or '').strip() or None;dcid=str(dsfo.get('CONTENT_ID') or '').strip() or None
