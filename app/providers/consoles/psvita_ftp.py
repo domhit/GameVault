@@ -6,8 +6,10 @@ from .ps3_sfo import parse_sfo
 APP_DB='/ur0:/shell/db/app.db'
 VITA_ID_RE=re.compile(r'^PCS[A-Z]\d{5}$',re.I)
 PSPEMU_ID_RE=re.compile(r'^(?:SLES|SCES|SCUS|SLUS)\d{5}$',re.I)
-HOMEBREW_IDS={'ARKSPSPHB','DOOM00000','PSPEMUCFW','TFCARDPL0','UPDATBLOC','VHBB00001','VITASHELL'}
-HOMEBREW_HINTS=('adrenaline','vita shell','vitashell','homebrew browser','retroarch','tf card plugin','update blocker')
+HOMEBREW_IDS={'ARKSPSPHB','AUTOPLUG2','DOOM00000','PKGJ00000','PSPEMUCFW','SKGTLSE12','TFCARDPL0','UPDATBLOC','VHBB00001','VITADBDLD','VITASHELL'}
+HOMEBREW_HINTS=('adrenaline','vita shell','vitashell','homebrew browser','autoplugin','itls-enso','pkgj','vitadb downloader','tf card plugin','update blocker')
+FANPORT_IDS={'SOSR00001','SOSR00002','THEXTECH0'}
+PSM_IDS={'NPOA00025'}
 MOUNTS=('/ux0:','/uma0:','/imc0:','/ur0:')
 class PSVitaFTPProvider(ConsoleProvider):
  provider_name='psvita_ftp'
@@ -78,11 +80,13 @@ class PSVitaFTPProvider(ConsoleProvider):
    # SLES/SCES/SCUS/SLUS -> /ux0:/pspemu/PSP/GAME/<ID> (no PARAM.SFO)
    # NPXS* -> /vs0:/app system applications (excluded here)
    apps={};native_ids=[];failed=[];unknown_ids=[]
-   diag['id_classes']={'native_pcs':0,'system_npxs':0,'homebrew':0,'pspemu':0,'other':0}
+   diag['id_classes']={'native_pcs':0,'system_npxs':0,'homebrew':0,'pspemu':0,'fanport':0,'playstation_mobile':0,'other':0}
    for tid,title in bubbles.items():
     if tid.startswith('NPXS'):diag['id_classes']['system_npxs']+=1;continue
     if tid in HOMEBREW_IDS or any(h in title.casefold() for h in HOMEBREW_HINTS):diag['id_classes']['homebrew']+=1;continue
     if PSPEMU_ID_RE.fullmatch(tid):diag['id_classes']['pspemu']+=1;continue
+    if tid in FANPORT_IDS:diag['id_classes']['fanport']+=1;continue
+    if tid in PSM_IDS:diag['id_classes']['playstation_mobile']+=1;continue
     if VITA_ID_RE.fullmatch(tid):
      diag['id_classes']['native_pcs']+=1;native_ids.append(tid);path=f'/ux0:/app/{tid}/sce_sys/param.sfo';probe=self._probe(ftp,path)
      if probe['ok']:apps[tid]=['/ux0:']
@@ -97,6 +101,7 @@ class PSVitaFTPProvider(ConsoleProvider):
     if tid.startswith('NPXS'):diag['system_ignored']+=1;continue
     if tid in HOMEBREW_IDS or any(h in title.casefold() for h in HOMEBREW_HINTS):diag['homebrew_ignored']+=1;continue
     if PSPEMU_ID_RE.fullmatch(tid):diag['pspemu_ignored']+=1;continue
+    if tid in FANPORT_IDS or tid in PSM_IDS:continue
     if not VITA_ID_RE.fullmatch(tid):continue
     installed_mounts=apps.get(tid,[])
     if not installed_mounts:continue
