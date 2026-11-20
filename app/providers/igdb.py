@@ -7,7 +7,9 @@ CLIENT_SECRET=os.getenv('IGDB_CLIENT_SECRET','')
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
 TOKEN_URL='https://id.twitch.tv/oauth2/token'
 API='https://api.igdb.com/v4'
-PLATFORMS={'PlayStation 1':7,'PlayStation Portable':38,'PlayStation 2':8,'PlayStation 3':9,'PlayStation 4':48,'Xbox 360':12,'Xbox Classic':11,'Wii U':41,'Wii':5,'Nintendo 3DS':37}
+PLATFORMS={'PlayStation 1':7,'PlayStation Portable':38,'PlayStation 2':8,'PlayStation 3':9,'PlayStation 4':48,'Xbox 360':12,'Xbox Classic':11,'Wii U':41,'Wii':5,'Nintendo 3DS':37,'Nintendo 64':4,'Super Nintendo':19,'Game Boy':33}
+PLATFORM_NAMES={v:k for k,v in PLATFORMS.items()}
+ORIGINAL_RELEASE_WINDOW_DAYS=365
 _token=None
 
 def configured(): return bool(CLIENT_ID and CLIENT_SECRET)
@@ -68,15 +70,26 @@ def map_record(r,platform=None):
  cover=r.get('cover',{}).get('image_id')
  platform_id=PLATFORMS.get(platform) if platform else None
  def release_platform_id(row):
-  p=row.get('platform')
-  if isinstance(p,dict): return p.get('id')
-  try: return int(p) if p is not None else None
-  except (TypeError,ValueError): return None
- platform_dates=[x.get('date') for x in (r.get('release_dates') or []) if release_platform_id(x)==platform_id and x.get('date')]
- platform_release_date=datetime.fromtimestamp(min(platform_dates),timezone.utc).date().isoformat() if platform_dates else None
- return {'igdb_id':r.get('id'),'title':r.get('name'),'description':r.get('summary'),'release_date':datetime.fromtimestamp(r['first_release_date'],timezone.utc).date().isoformat() if r.get('first_release_date') else None,'platform_release_date':platform_release_date,'genres':', '.join(x.get('name','') for x in r.get('genres',[]) if x.get('name')) or None,'publisher':', '.join(filter(None,pubs)) or None,'developer':', '.join(filter(None,devs)) or None,'cover_url':f'https://images.igdb.com/igdb/image/upload/t_cover_big_2x/{cover}.jpg' if cover else None,'game_modes':', '.join(x.get('name','') for x in r.get('game_modes',[]) if x.get('name')) or None,'perspectives':', '.join(x.get('name','') for x in r.get('player_perspectives',[]) if x.get('name')) or None,'themes':', '.join(x.get('name','') for x in r.get('themes',[]) if x.get('name')) or None,'franchises':', '.join(x.get('name','') for x in r.get('franchises',[]) if x.get('name')) or None,'engines':', '.join(x.get('name','') for x in r.get('game_engines',[]) if x.get('name')) or None,'multiplayer_modes':r.get('multiplayer_modes') or [],'user_rating':round(float(r['rating']),1) if r.get('rating') is not None else None,'user_rating_count':int(r.get('rating_count') or 0) if r.get('rating_count') is not None else None,'critic_rating':round(float(r['aggregated_rating']),1) if r.get('aggregated_rating') is not None else None,'critic_rating_count':int(r.get('aggregated_rating_count') or 0) if r.get('aggregated_rating_count') is not None else None,'confidence':r.get('_confidence',0)}
+  value=row.get('platform')
+  if isinstance(value,dict):value=value.get('id')
+  try:return int(value) if value is not None else None
+  except (TypeError,ValueError):return None
+ by_platform={}
+ for row in (r.get('release_dates') or []):
+  pid=release_platform_id(row);stamp=row.get('date')
+  if pid is None or not stamp:continue
+  try:stamp=int(stamp)
+  except (TypeError,ValueError):continue
+  by_platform[pid]=min(stamp,by_platform.get(pid,stamp))
+ earliest=min(by_platform.values()) if by_platform else (int(r.get('first_release_date')) if r.get('first_release_date') else None)
+ cutoff=earliest+ORIGINAL_RELEASE_WINDOW_DAYS*86400 if earliest is not None else None
+ original_ids=sorted((pid for pid,stamp in by_platform.items() if cutoff is not None and stamp<=cutoff),key=lambda pid:(by_platform[pid],PLATFORM_NAMES.get(pid,str(pid))))
+ original_platforms=[PLATFORM_NAMES[pid] for pid in original_ids if pid in PLATFORM_NAMES]
+ platform_stamp=by_platform.get(platform_id) if platform_id is not None else None
+ iso=lambda stamp:datetime.fromtimestamp(stamp,timezone.utc).date().isoformat() if stamp else None
+ return {'igdb_id':r.get('id'),'title':r.get('name'),'description':r.get('summary'),'release_date':iso(earliest),'platform_release_date':iso(platform_stamp),'original_platforms':original_platforms,'release_dates_by_platform':{PLATFORM_NAMES.get(pid,str(pid)):iso(stamp) for pid,stamp in sorted(by_platform.items(),key=lambda x:x[1])},'genres':', '.join(x.get('name','') for x in r.get('genres',[]) if x.get('name')) or None,'publisher':', '.join(filter(None,pubs)) or None,'developer':', '.join(filter(None,devs)) or None,'cover_url':f'https://images.igdb.com/igdb/image/upload/t_cover_big_2x/{cover}.jpg' if cover else None,'game_modes':', '.join(x.get('name','') for x in r.get('game_modes',[]) if x.get('name')) or None,'perspectives':', '.join(x.get('name','') for x in r.get('player_perspectives',[]) if x.get('name')) or None,'themes':', '.join(x.get('name','') for x in r.get('themes',[]) if x.get('name')) or None,'franchises':', '.join(x.get('name','') for x in r.get('franchises',[]) if x.get('name')) or None,'engines':', '.join(x.get('name','') for x in r.get('game_engines',[]) if x.get('name')) or None,'multiplayer_modes':r.get('multiplayer_modes') or [],'user_rating':round(float(r['rating']),1) if r.get('rating') is not None else None,'user_rating_count':int(r.get('rating_count') or 0) if r.get('rating_count') is not None else None,'critic_rating':round(float(r['aggregated_rating']),1) if r.get('aggregated_rating') is not None else None,'critic_rating_count':int(r.get('aggregated_rating_count') or 0) if r.get('aggregated_rating_count') is not None else None,'confidence':r.get('_confidence',0)}
 def download_cover(url,game_id,data_dir):
  if not url:return None
- r=requests.get(url,timeout=TIMEOUT,headers={'User-Agent':'GameVault/1.3.0'});r.raise_for_status()
+ r=requests.get(url,timeout=TIMEOUT,headers={'User-Agent':'GameVault/1.4.0'});r.raise_for_status()
  if len(r.content)<1000:return None
  p=Path(data_dir)/'covers'/f'{game_id}-igdb.jpg';p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(r.content);return f'/covers/{p.name}'
