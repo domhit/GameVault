@@ -4,8 +4,9 @@ import os,re,sqlite3,tempfile
 from .base import ConsoleProvider,InstalledTitle
 from .ps3_sfo import parse_sfo
 APP_DB='/ur0:/shell/db/app.db'
-VITA_ID_RE=re.compile(r'^(?:PCS[A-Z]\d{5}|NP[A-Z]{2}\d{5})$',re.I)
-HOMEBREW_IDS={'ARKSPSPHB','DOOM0000','PSPEMUCFW','TFCARDPLO','UPDATBLOC','VHBB00001','VITASHELL'}
+VITA_ID_RE=re.compile(r'^PCS[A-Z]\d{5}$',re.I)
+PSPEMU_ID_RE=re.compile(r'^(?:SLES|SCES|SCUS|SLUS)\d{5}$',re.I)
+HOMEBREW_IDS={'ARKSPSPHB','DOOM00000','PSPEMUCFW','TFCARDPL0','UPDATBLOC','VHBB00001','VITASHELL'}
 HOMEBREW_HINTS=('adrenaline','vita shell','vitashell','homebrew browser','retroarch','tf card plugin','update blocker')
 MOUNTS=('/ux0:','/uma0:','/imc0:','/ur0:')
 class PSVitaFTPProvider(ConsoleProvider):
@@ -40,9 +41,11 @@ class PSVitaFTPProvider(ConsoleProvider):
     except:
      try:ftp.cwd('/')
      except:pass
- def _exists(self,ftp,path):
-  try:self._read(ftp,path);return True
-  except:return False
+ def _probe(self,ftp,path):
+  try:
+   raw=self._read(ftp,path);return {'ok':True,'bytes':len(raw),'error':None}
+  except Exception as e:return {'ok':False,'bytes':0,'error':f'{type(e).__name__}: {e}'}
+ def _exists(self,ftp,path):return self._probe(ftp,path)['ok']
  def _sfo(self,ftp,path):
   try:return parse_sfo(self._read(ftp,path))
   except:return None
@@ -61,7 +64,7 @@ class PSVitaFTPProvider(ConsoleProvider):
   except Exception as e:out['error']=f'{type(e).__name__}: {e}'
   out['ok']=out['ftp']['ok'] and out['app_db']['ok'];return out
  def scan(self):
-  diag={'database_path':self.database_path,'directory_method':'app.db Title IDs + direct PARAM.SFO RETR; LIST only for DLC children','bubble_rows':0,'native_candidates':0,'games':0,'updates':0,'dlc':0,'system_ignored':0,'homebrew_ignored':0,'pspemu_ignored':0,'missing_app_sfo':0,'mounts':{},'errors':[]};items=[]
+  diag={'database_path':self.database_path,'directory_method':'app.db ID-family routing + direct PCS* PARAM.SFO RETR; LIST only for DLC children','bubble_rows':0,'native_candidates':0,'games':0,'updates':0,'dlc':0,'system_ignored':0,'homebrew_ignored':0,'pspemu_ignored':0,'missing_app_sfo':0,'mounts':{},'errors':[]};items=[]
   with self.connect() as ftp:
    raw=self._read(ftp,self.database_path);c,p=self._open_db(raw)
    try:
@@ -69,19 +72,31 @@ class PSVitaFTPProvider(ConsoleProvider):
    finally:c.close();os.unlink(p)
    bubbles={str(r['titleId'] or '').upper():str(r['title'] or '').strip() for r in rows}
    # File system is installation truth; app.db supplies the Vita shell title/bubble inventory.
-   # app.db provides known Title IDs. Probe each exact PARAM.SFO directly on
-   # every mount; RETR is supported by FTPVita and avoids unsupported directory lists.
-   apps={};probe_counts={mount:0 for mount in MOUNTS}
-   for tid in bubbles:
-    for mount in MOUNTS:
-     path=f'{mount}/app/{tid}/sce_sys/param.sfo'
-     if self._exists(ftp,path):apps.setdefault(tid,[]).append(mount);probe_counts[mount]+=1
-   for mount in MOUNTS:
-    diag['mounts'][mount.strip('/')]={'path':f'{mount}/app','method':'direct PARAM.SFO probe','app_dirs':probe_counts[mount]}
+   # Hardware-validated routing:
+   # PCS* -> /ux0:/app/<TITLE_ID>/sce_sys/param.sfo
+   # known homebrew IDs -> /imc0:/app (excluded here)
+   # SLES/SCES/SCUS/SLUS -> /ux0:/pspemu/PSP/GAME/<ID> (no PARAM.SFO)
+   # NPXS* -> /vs0:/app system applications (excluded here)
+   apps={};native_ids=[];failed=[];unknown_ids=[]
+   diag['id_classes']={'native_pcs':0,'system_npxs':0,'homebrew':0,'pspemu':0,'other':0}
+   for tid,title in bubbles.items():
+    if tid.startswith('NPXS'):diag['id_classes']['system_npxs']+=1;continue
+    if tid in HOMEBREW_IDS or any(h in title.casefold() for h in HOMEBREW_HINTS):diag['id_classes']['homebrew']+=1;continue
+    if PSPEMU_ID_RE.fullmatch(tid):diag['id_classes']['pspemu']+=1;continue
+    if VITA_ID_RE.fullmatch(tid):
+     diag['id_classes']['native_pcs']+=1;native_ids.append(tid);path=f'/ux0:/app/{tid}/sce_sys/param.sfo';probe=self._probe(ftp,path)
+     if probe['ok']:apps[tid]=['/ux0:']
+     elif len(failed)<20:failed.append({'title_id':tid,'title':title,'path':path,'error':probe['error']})
+     continue
+    diag['id_classes']['other']+=1
+    if len(unknown_ids)<20:unknown_ids.append({'title_id':tid,'title':title})
+   diag['native_pcs_ids']=native_ids
+   diag['native_probe_success']=len(apps);diag['native_probe_failed']=len(native_ids)-len(apps);diag['native_probe_failure_examples']=failed;diag['other_id_examples']=unknown_ids
+   diag['mounts']={'ux0:':{'path':'/ux0:/app','method':'app.db PCS* direct PARAM.SFO RETR','app_dirs':len(apps)},'imc0:':{'path':'/imc0:/app','method':'known homebrew IDs excluded before probe','app_dirs':0},'vs0:':{'path':'/vs0:/app','method':'NPXS system apps excluded before probe','app_dirs':0},'pspemu':{'path':'/ux0:/pspemu/PSP/GAME','method':'SLES/SCES family deferred; no PARAM.SFO expected','app_dirs':0}}
    for tid,title in bubbles.items():
     if tid.startswith('NPXS'):diag['system_ignored']+=1;continue
     if tid in HOMEBREW_IDS or any(h in title.casefold() for h in HOMEBREW_HINTS):diag['homebrew_ignored']+=1;continue
-    if re.fullmatch(r'(?:SLES|SCES|SCUS|SLUS)\d{5}',tid):diag['pspemu_ignored']+=1;continue
+    if PSPEMU_ID_RE.fullmatch(tid):diag['pspemu_ignored']+=1;continue
     if not VITA_ID_RE.fullmatch(tid):continue
     installed_mounts=apps.get(tid,[])
     if not installed_mounts:continue
