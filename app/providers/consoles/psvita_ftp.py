@@ -7,7 +7,7 @@ APP_DB='/ur0:/shell/db/app.db'
 VITA_ID_RE=re.compile(r'^(?:PCS[A-Z]\d{5}|NP[A-Z]{2}\d{5})$',re.I)
 HOMEBREW_IDS={'ARKSPSPHB','DOOM0000','PSPEMUCFW','TFCARDPLO','UPDATBLOC','VHBB00001','VITASHELL'}
 HOMEBREW_HINTS=('adrenaline','vita shell','vitashell','homebrew browser','retroarch','tf card plugin','update blocker')
-MOUNTS=('ux0:','uma0:','imc0:','ur0:')
+MOUNTS=('/ux0:','/uma0:','/imc0:','/ur0:')
 class PSVitaFTPProvider(ConsoleProvider):
  provider_name='psvita_ftp'
  def __init__(self,host,port=1337,username='anonymous',password='',database_path=APP_DB,timeout=20):
@@ -16,9 +16,13 @@ class PSVitaFTPProvider(ConsoleProvider):
   ftp=FTP();ftp.connect(self.host,self.port,timeout=self.timeout);ftp.login(self.username,self.password);ftp.set_pasv(True);return ftp
  def _read(self,ftp,path):
   b=BytesIO();ftp.retrbinary('RETR '+path,b.write);return b.getvalue()
- def _names(self,ftp,path):
-  try:return sorted({os.path.basename(str(x).rstrip('/')) for x in ftp.nlst(path) if os.path.basename(str(x).rstrip('/')) not in ('','.','..')})
-  except:return []
+ def _names(self,ftp,path,errors=None):
+  try:
+   rows=ftp.nlst(path)
+   return sorted({os.path.basename(str(x).rstrip('/')) for x in rows if os.path.basename(str(x).rstrip('/')) not in ('','.','..')})
+  except Exception as e:
+   if errors is not None:errors.append(f'{path}: {type(e).__name__}: {e}')
+   return []
  def _exists(self,ftp,path):
   try:self._read(ftp,path);return True
   except:return False
@@ -50,7 +54,7 @@ class PSVitaFTPProvider(ConsoleProvider):
    # File system is installation truth; app.db supplies the Vita shell title/bubble inventory.
    apps={}
    for mount in MOUNTS:
-    names=self._names(ftp,f'{mount}/app');diag['mounts'][mount]={'app_dirs':len(names)}
+    names=self._names(ftp,f'{mount}/app',diag['errors']);diag['mounts'][mount.strip('/')]={'path':f'{mount}/app','app_dirs':len(names)}
     for tid in names:apps.setdefault(tid.upper(),[]).append(mount)
    for tid,title in bubbles.items():
     if tid.startswith('NPXS'):diag['system_ignored']+=1;continue
@@ -67,13 +71,13 @@ class PSVitaFTPProvider(ConsoleProvider):
     patch_path=f'{mount}/patch/{tid}/sce_sys/param.sfo';patch=self._sfo(ftp,patch_path);installed_ver=base_ver
     if patch and str(patch.get('CATEGORY') or '').lower()=='gp':
      installed_ver=str(patch.get('APP_VER') or patch.get('VERSION') or '').strip() or base_ver
-     up=InstalledTitle('PlayStation Vita',tid,f'{name} Update',installed_ver,'Title Update','PS Vita FTP PARAM.SFO',patch_path,str(patch.get('CONTENT_ID') or content_id or '').strip() or None,'Title Update',mount.rstrip(':')).to_dict();up['source_parent_present']=True;items.append(up);diag['updates']+=1
-    game=InstalledTitle('PlayStation Vita',tid,name,installed_ver,'PS Vita Game','PS Vita app.db + PARAM.SFO',f'{mount}/app/{tid}',content_id,'PS Vita Game',mount.rstrip(':')).to_dict();game['history_raw_json']={'psvita_metadata':{'base_version':base_ver,'installed_version':installed_ver,'category':cat or None,'content_id':content_id,'np_communication_id':sfo.get('NP_COMMUNICATION_ID'),'psp2_disp_ver':sfo.get('PSP2_DISP_VER'),'psp2_system_ver':sfo.get('PSP2_SYSTEM_VER'),'pubtoolinfo':sfo.get('PUBTOOLINFO'),'app_mount':mount,'shell_title':title}};items.append(game);diag['games']+=1
+     up=InstalledTitle('PlayStation Vita',tid,f'{name} Update',installed_ver,'Title Update','PS Vita FTP PARAM.SFO',patch_path,str(patch.get('CONTENT_ID') or content_id or '').strip() or None,'Title Update',mount.strip('/').rstrip(':')).to_dict();up['source_parent_present']=True;items.append(up);diag['updates']+=1
+    game=InstalledTitle('PlayStation Vita',tid,name,installed_ver,'PS Vita Game','PS Vita app.db + PARAM.SFO',f'{mount}/app/{tid}',content_id,'PS Vita Game',mount.strip('/').rstrip(':')).to_dict();game['history_raw_json']={'psvita_metadata':{'base_version':base_ver,'installed_version':installed_ver,'category':cat or None,'content_id':content_id,'np_communication_id':sfo.get('NP_COMMUNICATION_ID'),'psp2_disp_ver':sfo.get('PSP2_DISP_VER'),'psp2_system_ver':sfo.get('PSP2_SYSTEM_VER'),'pubtoolinfo':sfo.get('PUBTOOLINFO'),'app_mount':mount.strip('/'),'shell_title':title}};items.append(game);diag['games']+=1
     # Add-on folders are child content. Each SFO exposes CATEGORY=ac, parent TITLE_ID and a unique CONTENT_ID/title.
     add_root=f'{mount}/addcont/{tid}'
-    for folder in self._names(ftp,add_root):
+    for folder in self._names(ftp,add_root,diag['errors']):
      dsfo_path=f'{add_root}/{folder}/sce_sys/param.sfo';dsfo=self._sfo(ftp,dsfo_path)
      if not dsfo or str(dsfo.get('CATEGORY') or '').lower()!='ac':continue
      parent=str(dsfo.get('TITLE_ID') or tid).upper();dtitle=str(dsfo.get('TITLE') or folder).replace('®','').replace('™','').strip();dver=str(dsfo.get('APP_VER') or dsfo.get('VERSION') or '').strip() or None;dcid=str(dsfo.get('CONTENT_ID') or '').strip() or None
-     dlc=InstalledTitle('PlayStation Vita',parent,dtitle,dver,'DLC','PS Vita FTP addcont PARAM.SFO',f'{add_root}/{folder}',dcid,'DLC',mount.rstrip(':')).to_dict();dlc['source_parent_present']=parent in bubbles;items.append(dlc);diag['dlc']+=1
+     dlc=InstalledTitle('PlayStation Vita',parent,dtitle,dver,'DLC','PS Vita FTP addcont PARAM.SFO',f'{add_root}/{folder}',dcid,'DLC',mount.strip('/').rstrip(':')).to_dict();dlc['source_parent_present']=parent in bubbles;items.append(dlc);diag['dlc']+=1
   diag['items']=len(items);return {'items':items,'diagnostics':diag}
