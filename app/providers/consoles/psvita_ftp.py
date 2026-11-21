@@ -19,13 +19,18 @@ RETROARCH_SYSTEMS={
  'nes':{'platform':'Nintendo Entertainment System','extensions':{'.nes'}},
  'snes':{'platform':'Super Nintendo','extensions':{'.sfc'}},
 }
-RETRO_LANG_RE=re.compile(r'^(?:[A-Z][a-z]?(?:,[A-Z][a-z]?)+|[A-Z][a-z]?)$')
+RETRO_LANG_RE=re.compile(r'^(?:[A-Z][a-z]?(?:,[A-Z][a-z]?)+)$')
+RETRO_REGIONS={'USA','Europe','Japan','World','Germany','France','Spain','Italy','Australia','Korea','China','Asia','Brazil','Sweden','Taiwan','Netherlands','Denmark','Hong Kong','Russia'}
+def _retro_region(value):
+ parts=[x.strip() for x in str(value or '').split(',') if x.strip()]
+ return ', '.join(parts) if parts and all(x in RETRO_REGIONS for x in parts) else None
 def parse_retro_rom_name(filename):
  name=os.path.basename(str(filename or ''));stem,ext=os.path.splitext(name);title=stem.split(' (',1)[0].strip()
  values=[g.strip() for g in re.findall(r'\(([^()]*)\)',stem[len(title):])]
- region=values[0] if values else None;languages=[];extras=[];revision=None
- for value in values[1:]:
-  if re.fullmatch(r'(?:[A-Z][a-z]?(?:,[A-Z][a-z]?)+)',value):languages=[x.strip() for x in value.split(',') if x.strip()]
+ region=_retro_region(values[0]) if values else None;languages=[];extras=[];revision=None
+ for i,value in enumerate(values):
+  if i==0 and region:continue
+  if RETRO_LANG_RE.fullmatch(value):languages=[x.strip() for x in value.split(',') if x.strip()]
   elif re.fullmatch(r'Rev(?:ision)?\s+[A-Za-z0-9.]+',value,re.I):revision=value
   else:extras.append(value)
  return {'filename':name,'title':title or stem,'extension':ext.lower(),'region':region,'languages':languages,'revision':revision,'extras':extras}
@@ -131,6 +136,19 @@ class PSVitaFTPProvider(ConsoleProvider):
     if path.lower().endswith('/sce_sys/param.sfo'):path=path[:-len('/sce_sys/param.sfo')]
     r=self._tree_size(ftp,path,set());results.append({'id':rec.get('id'),'path':path,'ok':r['ok'],'size_bytes':r['bytes'],'files':r['files'],'dirs':r['dirs'],'error':r['error']})
   return results
+ def retroarch_inventory(self):
+  items=[];skipped=[]
+  with self.connect() as ftp:
+   for folder,cfg in RETROARCH_SYSTEMS.items():
+    path=f'{RETROARCH_ROOT}/{folder}';rows,error=self._list_details(ftp,path)
+    if error:skipped.append({'path':path,'reason':error});continue
+    for row in rows:
+     if row['is_dir']:continue
+     meta=parse_retro_rom_name(row['name']);meta.update({'platform':cfg['platform'],'system_folder':folder,'path':f'{path}/{row["name"]}','size_bytes':row.get('size')})
+     if meta['extension'] not in cfg['extensions']:
+      skipped.append({'path':meta['path'],'filename':meta['filename'],'extension':meta['extension'],'reason':'unexpected extension'});continue
+     items.append(meta)
+  return {'items':items,'skipped':skipped}
  def discover_retroarch(self,sample_limit=8):
   diag={'root':RETROARCH_ROOT,'systems':{},'totals':{'files':0,'parsed':0,'unexpected_extension':0,'unique_normalized_titles':0},'errors':[]};all_titles=set()
   with self.connect() as ftp:

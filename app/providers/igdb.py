@@ -7,7 +7,7 @@ CLIENT_SECRET=os.getenv('IGDB_CLIENT_SECRET','')
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
 TOKEN_URL='https://id.twitch.tv/oauth2/token'
 API='https://api.igdb.com/v4'
-PLATFORMS={'PlayStation Vita':46,'PlayStation 1':7,'PlayStation Portable':38,'PlayStation 2':8,'PlayStation 3':9,'PlayStation 4':48,'Xbox 360':12,'Xbox Classic':11,'Wii U':41,'Wii':5,'Nintendo 3DS':37,'Nintendo 64':4,'Super Nintendo':19,'Game Boy':33}
+PLATFORMS={'PlayStation Vita':46,'PlayStation 1':7,'PlayStation Portable':38,'PlayStation 2':8,'PlayStation 3':9,'PlayStation 4':48,'Xbox 360':12,'Xbox Classic':11,'Wii U':41,'Wii':5,'Nintendo 3DS':37,'Nintendo 64':4,'Super Nintendo':19,'Game Boy':33,'Game Boy Color':22,'Game Boy Advance':24,'Nintendo Entertainment System':18}
 PLATFORM_NAMES={v:k for k,v in PLATFORMS.items()}
 ORIGINAL_RELEASE_WINDOW_DAYS=365
 _token=None
@@ -90,6 +90,6 @@ def map_record(r,platform=None):
  return {'igdb_id':r.get('id'),'title':r.get('name'),'description':r.get('summary'),'release_date':iso(earliest),'platform_release_date':iso(platform_stamp),'original_platforms':original_platforms,'release_dates_by_platform':{PLATFORM_NAMES.get(pid,str(pid)):iso(stamp) for pid,stamp in sorted(by_platform.items(),key=lambda x:x[1])},'genres':', '.join(x.get('name','') for x in r.get('genres',[]) if x.get('name')) or None,'publisher':', '.join(filter(None,pubs)) or None,'developer':', '.join(filter(None,devs)) or None,'cover_url':f'https://images.igdb.com/igdb/image/upload/t_cover_big_2x/{cover}.jpg' if cover else None,'game_modes':', '.join(x.get('name','') for x in r.get('game_modes',[]) if x.get('name')) or None,'perspectives':', '.join(x.get('name','') for x in r.get('player_perspectives',[]) if x.get('name')) or None,'themes':', '.join(x.get('name','') for x in r.get('themes',[]) if x.get('name')) or None,'franchises':', '.join(x.get('name','') for x in r.get('franchises',[]) if x.get('name')) or None,'engines':', '.join(x.get('name','') for x in r.get('game_engines',[]) if x.get('name')) or None,'multiplayer_modes':r.get('multiplayer_modes') or [],'user_rating':round(float(r['rating']),1) if r.get('rating') is not None else None,'user_rating_count':int(r.get('rating_count') or 0) if r.get('rating_count') is not None else None,'critic_rating':round(float(r['aggregated_rating']),1) if r.get('aggregated_rating') is not None else None,'critic_rating_count':int(r.get('aggregated_rating_count') or 0) if r.get('aggregated_rating_count') is not None else None,'confidence':r.get('_confidence',0)}
 def download_cover(url,game_id,data_dir):
  if not url:return None
- r=requests.get(url,timeout=TIMEOUT,headers={'User-Agent':'GameVault/1.5.0-dev13'});r.raise_for_status()
+ r=requests.get(url,timeout=TIMEOUT,headers={'User-Agent':'GameVault/1.5.0-dev14'});r.raise_for_status()
  if len(r.content)<1000:return None
  p=Path(data_dir)/'covers'/f'{game_id}-igdb.jpg';p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(r.content);return f'/covers/{p.name}'
