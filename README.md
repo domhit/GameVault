@@ -60,7 +60,7 @@ For Portainer, use `docker-compose.yml` and configure at least `POSTGRES_PASSWOR
 
 IGDB is the primary external metadata provider. Platform-specific sources are retained separately so console-scanned facts such as identifiers, installed versions, storage locations and history are not silently replaced by external metadata.
 
-See `THIRD_PARTY_SOURCES.md` for external providers and attribution details.
+See `THIRD_PARTY_SOURCES.md` for external providers and attribution details. Matching heuristics and tested special cases are documented in `MATCHING_RULES.md`.
 
 ## Backups and package import
 

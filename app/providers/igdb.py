@@ -31,18 +31,51 @@ def search_variants(title):
  title=search_title(title);variants=[]
  def add(v):
   v=' '.join(str(v or '').split()).strip(' -:')
-  if v and v.casefold() not in {x.casefold() for x in variants}:variants.append(v)
+  if v and v.lower() not in {x.lower() for x in variants}:variants.append(v)
  add(title)
  # No-Intro article suffix: "Addams Family, The" -> "The Addams Family".
  m=re.match(r'^(.*),\s*(The|A|An)$',title,re.I)
  if m:add(f'{m.group(2)} {m.group(1)}')
  # Common ROM-set punctuation and apostrophe normalization.
- add(title.replace('_s',"'s").replace(' - ',': '))
- add(title.replace('_s',"'s").replace(': ',' - '))
- add(re.sub(r'\s*[-:]\s*',' ',title.replace('_s',"'s")))
+ cleaned=title.replace('_s',"'s")
+ for underscore in (' & ',' and ',' '):
+  candidate=cleaned.replace(' _ ',underscore)
+  add(candidate);add(candidate.replace(' - ',': '));add(candidate.replace(': ',' - '));add(re.sub(r'\s*[-:]\s*',' ',candidate))
+ # Trailing German articles, e.g. 'Wilden Fussball-Kerle, Die'.
+ m=re.match(r'^(.*),\s*(Die|Der|Das|Ein|Eine)(\s*[-:].*)?$',title,re.I)
+ if m:add(f'{m.group(2)} {m.group(1)}{m.group(3) or ""}')
+ # Orthographic variants that commonly occur in localized ROM sets.
+ for current in list(variants):
+  add(re.sub(r'\bPokemon\b','Pokémon',current,flags=re.I));add(re.sub(r'\bFussball\b','Fußball',current,flags=re.I))
+ # Repeat after article movement because that transformation can add a new title variant.
+ for current in list(variants):
+  add(re.sub(r'\bPokemon\b','Pokémon',current,flags=re.I));add(re.sub(r'\bFussball\b','Fußball',current,flags=re.I))
  # Leading licence/series numbers often appear with or without punctuation in IGDB.
  add(re.sub(r'^(\d{3,4})\s*-\s*',r'\1: ',title))
+ # Small, reviewed aliases for localized names observed in the real collection.
+ aliases={
+  'pokemon - feuerrote edition':['Pokémon FireRed Version','Pokémon FireRed'],
+  'pokemon feuerrote edition':['Pokémon FireRed Version','Pokémon FireRed'],
+ }
+ for alias in aliases.get(title.casefold(),[]):add(alias)
  return variants
+RETRO_MATCH_PLATFORMS={'Game Boy','Game Boy Color','Game Boy Advance','Nintendo Entertainment System','Super Nintendo'}
+MATCH_STOPWORDS={'the','a','an','of','and','or','to','in','on','for','de','der','die','das','ein','eine','le','la','les','el','los','las'}
+def match_tokens(value):
+ return [x for x in re.findall(r'[a-z0-9]+',str(value or '').casefold().replace('ß','ss')) if x not in MATCH_STOPWORDS]
+def smart_auto_accept(source,candidate,confidence,platform):
+ if confidence>=.90:return True,'confidence>=90%'
+ if platform not in RETRO_MATCH_PLATFORMS or confidence<.75:return False,'below conservative retro threshold'
+ src=match_tokens(source);dst=match_tokens(candidate)
+ if len(src)<2:return False,'single informative token'
+ if str(source or '').casefold().startswith('double game'):return False,'compilation/multiple-title marker'
+ src_nums={x for x in src if x.isdigit()};dst_nums={x for x in dst if x.isdigit()}
+ if src_nums and dst_nums and src_nums!=dst_nums:return False,'conflicting numbers'
+ overlap=set(src)&set(dst)
+ if len(overlap)<2:return False,'fewer than two informative shared tokens'
+ shorter=set(src) if len(set(src))<=len(set(dst)) else set(dst)
+ if not shorter.issubset(overlap):return False,'shorter title not contained in longer title'
+ return True,'retro token containment>=75%'
 def _score(rows,variants):
  variants=[v for v in variants if v];norms=[norm(v) for v in variants if norm(v)];seen={}
  for r in rows:
@@ -109,6 +142,6 @@ def map_record(r,platform=None):
  return {'igdb_id':r.get('id'),'title':r.get('name'),'description':r.get('summary'),'release_date':iso(earliest),'platform_release_date':iso(platform_stamp),'original_platforms':original_platforms,'release_dates_by_platform':{PLATFORM_NAMES.get(pid,str(pid)):iso(stamp) for pid,stamp in sorted(by_platform.items(),key=lambda x:x[1])},'genres':', '.join(x.get('name','') for x in r.get('genres',[]) if x.get('name')) or None,'publisher':', '.join(filter(None,pubs)) or None,'developer':', '.join(filter(None,devs)) or None,'cover_url':f'https://images.igdb.com/igdb/image/upload/t_cover_big_2x/{cover}.jpg' if cover else None,'game_modes':', '.join(x.get('name','') for x in r.get('game_modes',[]) if x.get('name')) or None,'perspectives':', '.join(x.get('name','') for x in r.get('player_perspectives',[]) if x.get('name')) or None,'themes':', '.join(x.get('name','') for x in r.get('themes',[]) if x.get('name')) or None,'franchises':', '.join(x.get('name','') for x in r.get('franchises',[]) if x.get('name')) or None,'engines':', '.join(x.get('name','') for x in r.get('game_engines',[]) if x.get('name')) or None,'multiplayer_modes':r.get('multiplayer_modes') or [],'user_rating':round(float(r['rating']),1) if r.get('rating') is not None else None,'user_rating_count':int(r.get('rating_count') or 0) if r.get('rating_count') is not None else None,'critic_rating':round(float(r['aggregated_rating']),1) if r.get('aggregated_rating') is not None else None,'critic_rating_count':int(r.get('aggregated_rating_count') or 0) if r.get('aggregated_rating_count') is not None else None,'confidence':r.get('_confidence',0)}
 def download_cover(url,game_id,data_dir):
  if not url:return None
- r=requests.get(url,timeout=TIMEOUT,headers={'User-Agent':'GameVault/1.5.0-dev15'});r.raise_for_status()
+ r=requests.get(url,timeout=TIMEOUT,headers={'User-Agent':'GameVault/1.5.0-dev16'});r.raise_for_status()
  if len(r.content)<1000:return None
  p=Path(data_dir)/'covers'/f'{game_id}-igdb.jpg';p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(r.content);return f'/covers/{p.name}'
