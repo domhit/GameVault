@@ -26,36 +26,55 @@ def esc(s):return (s or '').replace('\\','\\\\').replace('"','\\"')
 def search_title(title):
  title=(title or '').replace('®','').replace('™','')
  return ' '.join(title.split())
-
 def norm(s):return ''.join(c for c in (s or '').casefold() if c.isalnum())
-def _score(rows,title):
- nt=norm(title);seen={}
+def search_variants(title):
+ title=search_title(title);variants=[]
+ def add(v):
+  v=' '.join(str(v or '').split()).strip(' -:')
+  if v and v.casefold() not in {x.casefold() for x in variants}:variants.append(v)
+ add(title)
+ # No-Intro article suffix: "Addams Family, The" -> "The Addams Family".
+ m=re.match(r'^(.*),\s*(The|A|An)$',title,re.I)
+ if m:add(f'{m.group(2)} {m.group(1)}')
+ # Common ROM-set punctuation and apostrophe normalization.
+ add(title.replace('_s',"'s").replace(' - ',': '))
+ add(title.replace('_s',"'s").replace(': ',' - '))
+ add(re.sub(r'\s*[-:]\s*',' ',title.replace('_s',"'s")))
+ # Leading licence/series numbers often appear with or without punctuation in IGDB.
+ add(re.sub(r'^(\d{3,4})\s*-\s*',r'\1: ',title))
+ return variants
+def _score(rows,variants):
+ variants=[v for v in variants if v];norms=[norm(v) for v in variants if norm(v)];seen={}
  for r in rows:
   if not r.get('id'):continue
-  base=SequenceMatcher(None,nt,norm(r.get('name',''))).ratio();exact=1 if nt==norm(r.get('name','')) else 0
-  r['_confidence']=round(min(1.0,base+0.04*exact),3);seen[r['id']]=r
+  names=[r.get('name','')]+[x.get('name','') for x in (r.get('alternative_names') or []) if isinstance(x,dict)]
+  best=0.0;matched=None
+  for query in norms:
+   for name in names:
+    nn=norm(name)
+    if not nn:continue
+    ratio=SequenceMatcher(None,query,nn).ratio();exact=query==nn
+    containment=(min(len(query),len(nn))/max(len(query),len(nn))) if query in nn or nn in query else 0
+    score=max(ratio,containment)+(0.04 if exact else 0)
+    if score>best:best=score;matched=name
+  row=dict(r);row['_confidence']=round(min(1.0,best),3);row['_matched_name']=matched
+  old=seen.get(row['id'])
+  if not old or row['_confidence']>old.get('_confidence',0):seen[row['id']]=row
  return sorted(seen.values(),key=lambda x:x['_confidence'],reverse=True)
-
 def search(title,platform,limit=8):
- title=search_title(title)
- pid=PLATFORMS.get(platform)
- fields='name,summary,first_release_date,rating,rating_count,aggregated_rating,aggregated_rating_count,cover.image_id,genres.name,game_modes.name,player_perspectives.name,themes.name,franchises.name,game_engines.name,multiplayer_modes.offlinecoop,multiplayer_modes.offlinemax,multiplayer_modes.onlinecoop,multiplayer_modes.onlinecoopmax,multiplayer_modes.onlinemax,multiplayer_modes.lancoop,multiplayer_modes.splitscreen,multiplayer_modes.splitscreenonline,multiplayer_modes.campaigncoop,multiplayer_modes.dropin,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.name,release_dates.date,release_dates.platform'
- aliases=[title]
- plain=' '.join(re.sub(r'[^\w ]+',' ',title,flags=re.UNICODE).split())
- if plain and plain not in aliases:aliases.append(plain)
+ title=search_title(title);aliases=search_variants(title);pid=PLATFORMS.get(platform)
+ fields='name,alternative_names.name,summary,first_release_date,rating,rating_count,aggregated_rating,aggregated_rating_count,cover.image_id,genres.name,game_modes.name,player_perspectives.name,themes.name,franchises.name,game_engines.name,multiplayer_modes.offlinecoop,multiplayer_modes.offlinemax,multiplayer_modes.onlinecoop,multiplayer_modes.onlinecoopmax,multiplayer_modes.onlinemax,multiplayer_modes.lancoop,multiplayer_modes.splitscreen,multiplayer_modes.splitscreenonline,multiplayer_modes.campaigncoop,multiplayer_modes.dropin,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.name,release_dates.date,release_dates.platform'
  rows=[]
  if pid:
   for alias in aliases:
-   rows+=post('games',f'search \"{esc(alias)}\"; fields {fields}; where platforms = ({pid}); limit {limit};')
+   rows+=post('games',f'search "{esc(alias)}"; fields {fields}; where platforms = ({pid}); limit {limit};')
+ # Broad fallback only after all platform-constrained variants fail.
  if not rows:
-  for alias in aliases:
-   rows+=post('games',f'search \"{esc(alias)}\"; fields {fields}; limit {limit};')
- 
- for row in rows: row['_requested_platform']=platform
- return _score(rows,title)
-
+  for alias in aliases:rows+=post('games',f'search "{esc(alias)}"; fields {fields}; limit {limit};')
+ for row in rows:row['_requested_platform']=platform
+ return _score(rows,aliases)
 def get_by_id(igdb_id,platform=None):
- fields='name,summary,first_release_date,rating,rating_count,aggregated_rating,aggregated_rating_count,cover.image_id,genres.name,game_modes.name,player_perspectives.name,themes.name,franchises.name,game_engines.name,multiplayer_modes.offlinecoop,multiplayer_modes.offlinemax,multiplayer_modes.onlinecoop,multiplayer_modes.onlinecoopmax,multiplayer_modes.onlinemax,multiplayer_modes.lancoop,multiplayer_modes.splitscreen,multiplayer_modes.splitscreenonline,multiplayer_modes.campaigncoop,multiplayer_modes.dropin,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.name,release_dates.date,release_dates.platform'
+ fields='name,alternative_names.name,summary,first_release_date,rating,rating_count,aggregated_rating,aggregated_rating_count,cover.image_id,genres.name,game_modes.name,player_perspectives.name,themes.name,franchises.name,game_engines.name,multiplayer_modes.offlinecoop,multiplayer_modes.offlinemax,multiplayer_modes.onlinecoop,multiplayer_modes.onlinecoopmax,multiplayer_modes.onlinemax,multiplayer_modes.lancoop,multiplayer_modes.splitscreen,multiplayer_modes.splitscreenonline,multiplayer_modes.campaigncoop,multiplayer_modes.dropin,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.name,release_dates.date,release_dates.platform'
  rows=post('games',f'fields {fields}; where id = {int(igdb_id)}; limit 1;')
  if not rows:return None
  rows[0]['_confidence']=1.0
@@ -90,6 +109,6 @@ def map_record(r,platform=None):
  return {'igdb_id':r.get('id'),'title':r.get('name'),'description':r.get('summary'),'release_date':iso(earliest),'platform_release_date':iso(platform_stamp),'original_platforms':original_platforms,'release_dates_by_platform':{PLATFORM_NAMES.get(pid,str(pid)):iso(stamp) for pid,stamp in sorted(by_platform.items(),key=lambda x:x[1])},'genres':', '.join(x.get('name','') for x in r.get('genres',[]) if x.get('name')) or None,'publisher':', '.join(filter(None,pubs)) or None,'developer':', '.join(filter(None,devs)) or None,'cover_url':f'https://images.igdb.com/igdb/image/upload/t_cover_big_2x/{cover}.jpg' if cover else None,'game_modes':', '.join(x.get('name','') for x in r.get('game_modes',[]) if x.get('name')) or None,'perspectives':', '.join(x.get('name','') for x in r.get('player_perspectives',[]) if x.get('name')) or None,'themes':', '.join(x.get('name','') for x in r.get('themes',[]) if x.get('name')) or None,'franchises':', '.join(x.get('name','') for x in r.get('franchises',[]) if x.get('name')) or None,'engines':', '.join(x.get('name','') for x in r.get('game_engines',[]) if x.get('name')) or None,'multiplayer_modes':r.get('multiplayer_modes') or [],'user_rating':round(float(r['rating']),1) if r.get('rating') is not None else None,'user_rating_count':int(r.get('rating_count') or 0) if r.get('rating_count') is not None else None,'critic_rating':round(float(r['aggregated_rating']),1) if r.get('aggregated_rating') is not None else None,'critic_rating_count':int(r.get('aggregated_rating_count') or 0) if r.get('aggregated_rating_count') is not None else None,'confidence':r.get('_confidence',0)}
 def download_cover(url,game_id,data_dir):
  if not url:return None
- r=requests.get(url,timeout=TIMEOUT,headers={'User-Agent':'GameVault/1.5.0-dev14'});r.raise_for_status()
+ r=requests.get(url,timeout=TIMEOUT,headers={'User-Agent':'GameVault/1.5.0-dev15'});r.raise_for_status()
  if len(r.content)<1000:return None
  p=Path(data_dir)/'covers'/f'{game_id}-igdb.jpg';p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(r.content);return f'/covers/{p.name}'
