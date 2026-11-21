@@ -54,3 +54,42 @@ The normal platform filter matches only the owned/imported GameVault platform. D
 ## Physical and hosted content
 
 Physical ownership is independent from digital installation, backup or ROM availability. Vita PSPemu entries remain PlayStation 1 games hosted on PlayStation Vita; RetroArch entries remain their original Nintendo platform hosted on PlayStation Vita / RetroArch.
+
+
+## PlayStation Vita provider classification
+
+The Vita provider uses hardware-validated ID families and paths.
+
+### Native Vita content
+
+- `PCS*` IDs are native Vita candidates and are probed at `/ux0:/app/<TITLE_ID>/sce_sys/param.sfo`.
+- `CATEGORY=gd` is a base game.
+- `CATEGORY=gp` under `/ux0:/patch/<TITLE_ID>` is a title update; its `APP_VER` is the installed game version when present.
+- `CATEGORY=ac` under `/ux0:/addcont/<TITLE_ID>/<CONTENT>/sce_sys/param.sfo` is DLC and remains attached to its parent Title ID.
+- `NPXS*` entries are system applications under `vs0` and are excluded from the game library.
+
+### Confirmed Vita tools / homebrew excluded from the game library
+
+`ARKSPSPHB`, `AUTOPLUG2`, `DOOM00000`, `PKGJ00000`, `PSPEMUCFW`, `SKGTLSE12`, `TFCARDPL0`, `UPDATBLOC`, `VHBB00001`, `VITADBDLD`, `VITASHELL`.
+
+These are explicit tested IDs, not a rule that every non-PCS application is disposable.
+
+### Playable special content preserved
+
+- `SOSR00001`, `SOSR00002`, `THEXTECH0`: fan ports, retained as a distinct class for future dedicated handling.
+- `NPOA00025`: PlayStation Mobile Lemmings, retained as PlayStation Mobile rather than discarded as homebrew.
+- `RETROVITA`: RetroArch anchor; not imported as a native Vita game because its ROM collection is handled by the RetroArch inventory stream.
+
+### PSPemu / PS1 Classics
+
+- `SLES*`, `SCES*`, `SLUS*`, `SCUS*` entries are treated as PS1 Classics hosted by Vita PSPemu.
+- Import only when `/ux0:/pspemu/PSP/GAME/<TITLE_ID>` is non-empty.
+- Real tested folders contain `EBOOT.PBP`, `DOCUMENT.DAT`, `__sce_ebootpbp`, and sometimes `__sce_menuinfo`; no Vita `PARAM.SFO` is expected there.
+- Library platform remains PlayStation 1; host/runtime metadata records PlayStation Vita / PSPemu.
+- SerialStation resolves the PlayStation serial to a canonical name before IGDB lookup.
+
+### FTPVita behavior
+
+- `NLST` and `MLSD` are not relied upon because the tested FTPVita server returns `502` for them.
+- Known native Title IDs are direct-probed with `RETR`.
+- Classic `LIST` is used for directories where enumeration is required, such as DLC children, PSPemu presence and recursive installed-size calculation.
