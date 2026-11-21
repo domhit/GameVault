@@ -1,19 +1,26 @@
 # GameVault Backlog
 
+## v1.6 - Resolver quality
+
+- Research and implement authoritative Title-ID -> canonical-name resolvers comparable to SerialStation for **Xbox Classic / Xbox 360**.
+- Research equivalent canonical-name resolution for **Nintendo Wii / Wii U / Nintendo 3DS** and later Nintendo Switch.
+- Evaluate **TheGamesDB** as an optional retro resolver, especially platform-constrained name lookup and ROM-hash resolution, while keeping IGDB as the primary metadata store.
+- Replace remaining platform-specific title overrides with maintainable resolver data where an authoritative source exists.
+
 ## Console inventory
 
-- **PlayStation Vita CFW**: investigate authoritative installed-title metadata on real hardware before implementing a provider/exporter. Target data includes Title ID/Content ID, title, version, DLC/update relationships, storage and installed size where reliable.
-- **Nintendo Switch / Atmosphere**: deferred until the test console is available again. Follow the same real-hardware-first provider approach.
+- **Nintendo Switch / Atmosphere**: deferred until the test console is available again; use the same real-hardware-first provider approach.
 - Determine reliable installed-size data for **Wii U** titles and **Wii/vWii** content without expensive full directory walks where possible.
 - Investigate reliable Xbox 360 DLC inventory and active/disabled Title Update state.
 - Optional `ps3netsrv`/NAS mapping so `/netX` PS3 games can obtain sizes from the NAS.
+- Consider dedicated import handling for Vita fan ports and PlayStation Mobile entries currently preserved as classified special content.
 
 ## Library and metadata
 
-- Extend manual/offline platform support beyond Nintendo 64, SNES and Game Boy where useful.
 - Saved filters and tag manager / bulk tagging.
-- Continue improving platform-specific/original release handling for unusual ports, remasters and Virtual Console/inject edge cases when real examples appear.
+- Continue improving unusual port/remaster/original-platform edge cases only from real examples.
 - Restore/extend remote update availability where authoritative public sources exist.
+- Optional cached ROM hashes for RetroArch if a resolver such as TheGamesDB proves materially better on real unmatched titles.
 
 ## Backup and operations
 

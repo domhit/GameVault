@@ -22,3 +22,5 @@ Artwork and metadata remain property of their respective owners/providers.
 GameVault console providers are read-only scanners. The application does not intentionally modify console databases, Game Data, save data, ISOs or Title Updates.
 
 - Nintendo 3DS: GameVault Nintendo 3DS Exporter v0.1.0 `installed_titles.json`, read-only over FTP. System title metadata remains console-derived.
+
+- PlayStation Vita: VitaShell FTP, Sony shell `ur0:/shell/db/app.db`, and read-only game/patch/add-on `PARAM.SFO` metadata.
