@@ -11,6 +11,24 @@ HOMEBREW_HINTS=('adrenaline','vita shell','vitashell','homebrew browser','autopl
 FANPORT_IDS={'SOSR00001','SOSR00002','THEXTECH0'}
 PSM_IDS={'NPOA00025'}
 MOUNTS=('/ux0:','/uma0:','/imc0:','/ur0:')
+RETROARCH_ROOT='/ux0:/data/retroarch/roms'
+RETROARCH_SYSTEMS={
+ 'gb':{'platform':'Game Boy','extensions':{'.gb'}},
+ 'gbc':{'platform':'Game Boy Color','extensions':{'.gbc'}},
+ 'gba':{'platform':'Game Boy Advance','extensions':{'.gba'}},
+ 'nes':{'platform':'Nintendo Entertainment System','extensions':{'.nes'}},
+ 'snes':{'platform':'Super Nintendo','extensions':{'.sfc'}},
+}
+RETRO_LANG_RE=re.compile(r'^(?:[A-Z][a-z]?(?:,[A-Z][a-z]?)+|[A-Z][a-z]?)$')
+def parse_retro_rom_name(filename):
+ name=os.path.basename(str(filename or ''));stem,ext=os.path.splitext(name);title=stem.split(' (',1)[0].strip()
+ values=[g.strip() for g in re.findall(r'\(([^()]*)\)',stem[len(title):])]
+ region=values[0] if values else None;languages=[];extras=[];revision=None
+ for value in values[1:]:
+  if re.fullmatch(r'(?:[A-Z][a-z]?(?:,[A-Z][a-z]?)+)',value):languages=[x.strip() for x in value.split(',') if x.strip()]
+  elif re.fullmatch(r'Rev(?:ision)?\s+[A-Za-z0-9.]+',value,re.I):revision=value
+  else:extras.append(value)
+ return {'filename':name,'title':title or stem,'extension':ext.lower(),'region':region,'languages':languages,'revision':revision,'extras':extras}
 class PSVitaFTPProvider(ConsoleProvider):
  provider_name='psvita_ftp'
  def __init__(self,host,port=1337,username='anonymous',password='',database_path=APP_DB,timeout=20):
@@ -113,6 +131,24 @@ class PSVitaFTPProvider(ConsoleProvider):
     if path.lower().endswith('/sce_sys/param.sfo'):path=path[:-len('/sce_sys/param.sfo')]
     r=self._tree_size(ftp,path,set());results.append({'id':rec.get('id'),'path':path,'ok':r['ok'],'size_bytes':r['bytes'],'files':r['files'],'dirs':r['dirs'],'error':r['error']})
   return results
+ def discover_retroarch(self,sample_limit=8):
+  diag={'root':RETROARCH_ROOT,'systems':{},'totals':{'files':0,'parsed':0,'unexpected_extension':0,'unique_normalized_titles':0},'errors':[]};all_titles=set()
+  with self.connect() as ftp:
+   for folder,cfg in RETROARCH_SYSTEMS.items():
+    path=f'{RETROARCH_ROOT}/{folder}';rows,error=self._list_details(ftp,path);files=[r for r in rows if not r['is_dir']]
+    if error:diag['errors'].append(f'{path}: {error}')
+    parsed=[];unexpected=[];regions={};revisions=protos=unlicensed=sgb=gbcompatible=0
+    titles=set()
+    for row in files:
+     meta=parse_retro_rom_name(row['name']);meta['size_bytes']=row.get('size');meta['path']=f'{path}/{row["name"]}';ok=meta['extension'] in cfg['extensions'];meta['extension_ok']=ok
+     if not ok:unexpected.append(meta['filename'])
+     else:
+      parsed.append(meta);titles.add(meta['title'].casefold());all_titles.add((cfg['platform'],meta['title'].casefold()));regions[meta['region'] or 'Unknown']=regions.get(meta['region'] or 'Unknown',0)+1
+      values=[x.casefold() for x in ([meta['revision']] if meta['revision'] else [])+meta['extras']]
+      revisions+=1 if meta['revision'] else 0;protos+=sum('proto' in x for x in values);unlicensed+=sum(x in ('unl','unlicensed') for x in values);sgb+=sum('sgb enhanced' in x for x in values);gbcompatible+=sum('gb compatible' in x for x in values)
+    diag['systems'][folder]={'platform':cfg['platform'],'path':path,'files':len(files),'parsed':len(parsed),'unique_normalized_titles':len(titles),'regions':regions,'revisions':revisions,'proto':protos,'unlicensed':unlicensed,'sgb_enhanced':sgb,'gb_compatible':gbcompatible,'unexpected_extension':len(unexpected),'unexpected_examples':unexpected[:sample_limit],'examples':parsed[:sample_limit]}
+    diag['totals']['files']+=len(files);diag['totals']['parsed']+=len(parsed);diag['totals']['unexpected_extension']+=len(unexpected)
+  diag['totals']['unique_normalized_titles']=len(all_titles);return diag
  def scan(self):
   diag={'database_path':self.database_path,'directory_method':'app.db ID-family routing + direct PCS* PARAM.SFO RETR; LIST only for DLC children','bubble_rows':0,'native_candidates':0,'games':0,'updates':0,'dlc':0,'system_ignored':0,'homebrew_ignored':0,'pspemu_ignored':0,'missing_app_sfo':0,'mounts':{},'errors':[]};items=[]
   with self.connect() as ftp:
