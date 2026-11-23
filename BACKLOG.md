@@ -103,3 +103,9 @@
 - Move Wii to the full persistent German GameTDB XML catalog including WiiWare/GameCube.
 - Add persistent 3DS and Switch GameTDB XML catalog infrastructure; add a 3DS diagnostic that explicitly reports the current exporter's missing ProductCode rather than guessing from TitleID.
 - Prepare the 3DS provider to consume `productCode` as soon as the exporter emits it.
+
+
+######## v1.6.0-dev16
+- Accept Nintendo 3DS exporter schemas 3 and 4 and retain ProductCode result diagnostics.
+- Add one action to download and persist all four Nintendo GameTDB catalogs: Wii, Wii U, Nintendo 3DS and Nintendo Switch.
+- Add an always-visible close button to the Quellen & Resolver header and make its action footer scrollable/wrapping on constrained screens.
