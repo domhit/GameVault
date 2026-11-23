@@ -2,12 +2,12 @@ import os,re,threading,time,requests
 from bs4 import BeautifulSoup
 from pathlib import Path
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
-UA={'User-Agent':'GameVault/1.6.0-dev12 (+https://github.com/domhit/GameVault)'}
+UA={'User-Agent':'GameVault/1.6.0-dev13 (+https://github.com/domhit/GameVault)'}
 WII_TITLES='https://www.gametdb.com/wiitdb.txt?LANG=EN'
 WII_GAME='https://www.gametdb.com/Wii/{game_id}'
 WIIU_TITLES='https://www.gametdb.com/wiiutdb.txt?LANG=EN'
 CACHE_TTL=max(300,int(os.getenv('GAMETDB_CACHE_SECONDS','21600')))
-_lock=threading.RLock();_cache={'rows':None,'loaded_at':0.0,'error':None};_wiiu_cache={'rows':None,'loaded_at':0.0,'error':None};_details={}
+_lock=threading.RLock();_cache={'rows':None,'loaded_at':0.0,'error':None};_wiiu_cache={'rows':None,'loaded_at':0.0,'error':None,'status_code':None,'content_type':None,'bytes':None,'first_ids':[],'last_ids':[]};_details={}
 def normalize_wii_id(value):
  value=re.sub(r'[^A-Z0-9]','',str(value or '').upper())
  return value if re.fullmatch(r'[A-Z0-9]{6}',value) else None
@@ -39,8 +39,9 @@ def wiiu_catalog(force=False):
   if not force and _wiiu_cache['rows'] is not None and now-_wiiu_cache['loaded_at']<CACHE_TTL:return _wiiu_cache['rows']
  try:
   r=requests.get(WIIU_TITLES,headers=UA,timeout=TIMEOUT);r.raise_for_status();rows=_parse_titles(r.text)
-  if len(rows)<500:raise ValueError(f'GameTDB Wii U title list unexpectedly small: {len(rows)}')
-  with _lock:_wiiu_cache.update({'rows':rows,'loaded_at':now,'error':None})
+  if not rows:raise ValueError('GameTDB Wii U title list parsed zero entries')
+  ids=sorted(rows);with_data={'rows':rows,'loaded_at':now,'error':None,'status_code':r.status_code,'content_type':r.headers.get('content-type'),'bytes':len(r.content),'first_ids':ids[:5],'last_ids':ids[-5:]};
+  with _lock:_wiiu_cache.update(with_data)
   return rows
  except Exception as e:
   with _lock:_wiiu_cache['error']=f'{type(e).__name__}: {e}'
@@ -73,7 +74,7 @@ def resolve_wii(game_id,fallback=None):
   return {'ok':True,'game_id':gid,'name':name,'source':'GameTDB','error':None}
  except Exception as e:return {'ok':False,'game_id':gid,'name':fallback,'source':'console','error':f'{type(e).__name__}: {e}'}
 def status():
- with _lock:return {'cached':_cache['rows'] is not None,'entries':len(_cache['rows'] or {}),'loaded_at':_cache['loaded_at'] or None,'error':_cache['error'],'url':WII_TITLES,'cache_ttl_seconds':CACHE_TTL,'detail_cache_entries':len(_details),'wiiu_cached':_wiiu_cache['rows'] is not None,'wiiu_entries':len(_wiiu_cache['rows'] or {}),'wiiu_error':_wiiu_cache['error'],'wiiu_url':WIIU_TITLES}
+ with _lock:return {'cached':_cache['rows'] is not None,'entries':len(_cache['rows'] or {}),'loaded_at':_cache['loaded_at'] or None,'error':_cache['error'],'url':WII_TITLES,'cache_ttl_seconds':CACHE_TTL,'detail_cache_entries':len(_details),'wiiu_cached':_wiiu_cache['rows'] is not None,'wiiu_entries':len(_wiiu_cache['rows'] or {}),'wiiu_error':_wiiu_cache['error'],'wiiu_url':WIIU_TITLES,'wiiu_status_code':_wiiu_cache.get('status_code'),'wiiu_content_type':_wiiu_cache.get('content_type'),'wiiu_bytes':_wiiu_cache.get('bytes'),'wiiu_first_ids':_wiiu_cache.get('first_ids') or [],'wiiu_last_ids':_wiiu_cache.get('last_ids') or []}
 
 _DETAIL_LABELS={
  'id','region','type','languages','title','synopsis','developer','publisher','release date','genre','rating','players','online players',

@@ -82,3 +82,10 @@
 - Correct Wii U GameTDB diagnostic ID derivation: use the final four characters of `WUP-X-ABCP` plus the final two characters of the four-character company code (`0001 -> 01`, `0008 -> 08`, `0052 -> 52`).
 - Keep the four-character product token as a secondary candidate for GameTDB eShop entries that intentionally omit a company suffix.
 - Diagnostic remains read-only; no Wii U resolver or metadata mutation is enabled yet.
+
+
+##### v1.6.0-dev13
+- Fix Wii U GameTDB diagnostics: accept any non-empty syntactically valid `wiiutdb.txt` feed instead of rejecting the observed 458-entry response with an arbitrary minimum-size guard.
+- Preserve derived ProductCode/CompanyCode candidates even when the remote catalog request fails.
+- Expose Wii U GameTDB feed diagnostics (entry count, response bytes/content type, first/last IDs) in the diagnostic result so partial-feed behavior is visible.
+- Diagnostic remains strictly read-only.
