@@ -115,3 +115,8 @@ These are explicit tested IDs, not a rule that every non-PCS application is disp
 - Commits still mark the cache dirty and advance its generation.
 - When the outer batch ends, exactly one debounced background rebuild is scheduled.
 - Direct fallback and last-known-good snapshot behavior remain unchanged.
+
+
+###### Wii GameTDB Custom metadata fallback
+- Normal Wii releases keep IGDB as primary metadata source.
+- When IGDB has no match, GameVault may inspect the public GameTDB page for the Wii Game ID. Only entries explicitly reported as `CUSTOM` may fill missing developer, publisher, genre, release date, synopsis, region, player hint and cover. Manual fields and existing local covers are never overwritten.

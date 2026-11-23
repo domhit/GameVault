@@ -1,9 +1,12 @@
 import os,re,threading,time,requests
+from bs4 import BeautifulSoup
+from pathlib import Path
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
-UA={'User-Agent':'GameVault/1.6.0-dev8 (+https://github.com/domhit/GameVault)'}
+UA={'User-Agent':'GameVault/1.6.0-dev9 (+https://github.com/domhit/GameVault)'}
 WII_TITLES='https://www.gametdb.com/wiitdb.txt?LANG=EN'
+WII_GAME='https://www.gametdb.com/Wii/{game_id}'
 CACHE_TTL=max(300,int(os.getenv('GAMETDB_CACHE_SECONDS','21600')))
-_lock=threading.RLock();_cache={'rows':None,'loaded_at':0.0,'error':None}
+_lock=threading.RLock();_cache={'rows':None,'loaded_at':0.0,'error':None};_details={}
 def normalize_wii_id(value):
  value=re.sub(r'[^A-Z0-9]','',str(value or '').upper())
  return value if re.fullmatch(r'[A-Z0-9]{6}',value) else None
@@ -38,4 +41,58 @@ def resolve_wii(game_id,fallback=None):
   return {'ok':True,'game_id':gid,'name':name,'source':'GameTDB','error':None}
  except Exception as e:return {'ok':False,'game_id':gid,'name':fallback,'source':'console','error':f'{type(e).__name__}: {e}'}
 def status():
- with _lock:return {'cached':_cache['rows'] is not None,'entries':len(_cache['rows'] or {}),'loaded_at':_cache['loaded_at'] or None,'error':_cache['error'],'url':WII_TITLES,'cache_ttl_seconds':CACHE_TTL}
+ with _lock:return {'cached':_cache['rows'] is not None,'entries':len(_cache['rows'] or {}),'loaded_at':_cache['loaded_at'] or None,'error':_cache['error'],'url':WII_TITLES,'cache_ttl_seconds':CACHE_TTL,'detail_cache_entries':len(_details)}
+
+def _next_value(lines,label):
+ label=label.casefold()
+ for i,value in enumerate(lines):
+  v=value.strip();low=v.casefold()
+  if low==label and i+1<len(lines):return lines[i+1].strip()
+  if low.startswith(label+' '):return v[len(label):].strip()
+ return None
+def _parse_detail_html(html,game_id):
+ soup=BeautifulSoup(html,'html.parser');lines=[' '.join(x.split()) for x in soup.stripped_strings if ' '.join(x.split())]
+ raw_type=_next_value(lines,'type');game_type=(raw_type or '').strip().upper() or None
+ title=_next_value(lines,'title (EN)') or _next_value(lines,'title')
+ synopsis=_next_value(lines,'synopsis (EN)') or _next_value(lines,'synopsis')
+ developer=_next_value(lines,'developer');publisher=_next_value(lines,'publisher');release=_next_value(lines,'release date');genre=_next_value(lines,'genre');region=_next_value(lines,'region');languages=_next_value(lines,'languages');players=_next_value(lines,'players');online=_next_value(lines,'online players')
+ images=[]
+ for img in soup.find_all('img',src=True):
+  url=requests.compat.urljoin('https://www.gametdb.com',img.get('src'))
+  low=url.casefold()
+  if game_id.casefold() in low and any(x in low for x in ('cover','box','case')) and url not in images:images.append(url)
+ return {'game_id':game_id,'type':game_type,'title':title,'synopsis':synopsis,'developer':developer,'publisher':publisher,'release_date':release,'genre':genre,'region':region,'languages':languages,'players':players,'online_players':online,'cover_urls':images,'source_url':WII_GAME.format(game_id=game_id)}
+def detail(game_id,force=False):
+ gid=normalize_wii_id(game_id)
+ if not gid:return {'ok':False,'game_id':game_id,'error':'invalid Wii Game ID'}
+ now=time.time()
+ with _lock:
+  row=_details.get(gid)
+  if row and not force and now-row.get('_loaded_at',0)<CACHE_TTL:return dict(row)
+ try:
+  r=requests.get(WII_GAME.format(game_id=gid),headers=UA,timeout=TIMEOUT)
+  if r.status_code==404:return {'ok':False,'game_id':gid,'error':'not found in GameTDB detail'}
+  r.raise_for_status();row=_parse_detail_html(r.text,gid);row.update({'ok':True,'_loaded_at':now,'error':None})
+  with _lock:_details[gid]=row
+  return dict(row)
+ except Exception as e:return {'ok':False,'game_id':gid,'error':f'{type(e).__name__}: {e}'}
+def custom_detail(game_id):
+ row=detail(game_id)
+ row['custom']=bool(row.get('ok') and str(row.get('type') or '').upper()=='CUSTOM')
+ return row
+def save_custom_cover(row,game_id,data_dir):
+ urls=list(row.get('cover_urls') or []);gid=row.get('game_id')
+ # Standard GameTDB artwork endpoints are best-effort fallbacks when the detail page did not expose an image URL.
+ if gid:
+  for region in ('EN','US','EU','DE'):
+   for kind in ('cover3D','cover','coverfull'):
+    u=f'https://art.gametdb.com/wii/{kind}/{region}/{gid}.png'
+    if u not in urls:urls.append(u)
+ for url in urls:
+  try:
+   r=requests.get(url,headers=UA,timeout=TIMEOUT);r.raise_for_status()
+   if len(r.content)<1000:continue
+   ctype=(r.headers.get('content-type') or '').casefold();ext='.png' if 'png' in ctype or r.content[:8]==b'\x89PNG\r\n\x1a\n' else '.jpg'
+   p=Path(data_dir)/'covers'/f'{game_id}-gametdb{ext}';p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(r.content);return f'/covers/{p.name}',url
+  except Exception:continue
+ return None,None
