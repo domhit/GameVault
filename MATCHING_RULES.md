@@ -135,3 +135,11 @@ These are explicit tested IDs, not a rule that every non-PCS application is disp
 - Container restarts load the persistent ZIP locally; no periodic HTTP refresh is required. A manual refresh action is available under `Quellen & Resolver`.
 - Both GameTDB ID forms are indexed because the real catalog contains both: 6-character Product+Company IDs and 4-character Product IDs. Candidate priority remains exact 6-character ID, then exact 4-character ID.
 - The Wii U diagnostic remains read-only in dev14. Existing Wii U Game/IGDB metadata is not modified.
+
+
+###### Nintendo persistent GameTDB resolvers (dev15)
+- Wii uses a persistent local copy of `wiitdb.zip?LANG=DE&WIIWARE=1&GAMECUBE=1` and exact six-character Game ID lookup before IGDB. Existing Wii Custom behavior and overrides remain fallbacks.
+- Wii U is now a productive canonical-name resolver after 58/58 hardware-validation: exporter `productCode` + `companyCode` generates exact 6/4-character GameTDB candidates against the persistent full XML catalog; confirmed IGDB IDs still take priority.
+- Nintendo 3DS uses persistent `3dstdb.zip?LANG=DE`, but productive resolution is enabled only when a future exporter supplies `productCode`; current TitleID/uniqueId data are not guessed into GameTDB IDs.
+- Nintendo Switch infrastructure uses persistent `switchtdb.zip?LANG=DE`; no console resolver is activated until real exporter/hardware identifier fields exist.
+- All XML catalogs download once to `/data/provider-cache/gametdb` and persist across container restarts; manual force-refresh APIs are available.

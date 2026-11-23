@@ -96,3 +96,10 @@
 - Parse/index 4- and 6-character Wii U GameTDB IDs plus useful catalog metadata locally; container restarts reuse the cached ZIP.
 - Add an explicit manual Wii U GameTDB cache refresh action.
 - Keep Wii U mapping read-only until the full 58-title hardware-validated diagnostic is confirmed.
+
+
+####### v1.6.0-dev15
+- Promote the 100%-validated Wii U GameTDB ProductCode/CompanyCode mapping to the canonical resolver before IGDB.
+- Move Wii to the full persistent German GameTDB XML catalog including WiiWare/GameCube.
+- Add persistent 3DS and Switch GameTDB XML catalog infrastructure; add a 3DS diagnostic that explicitly reports the current exporter's missing ProductCode rather than guessing from TitleID.
+- Prepare the 3DS provider to consume `productCode` as soon as the exporter emits it.

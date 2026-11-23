@@ -72,7 +72,7 @@ class Nintendo3DSGameVaultProvider(ConsoleProvider):
             item=InstalledTitle('Nintendo 3DS',parent,title,str(version) if version is not None else None,category,'GameVault Nintendo 3DS Exporter',path,tid,category,media).to_dict()
             item['installed_size_bytes']=int(row.get('installedSizeBytes')) if row.get('installedSizeBytes') is not None else None
             item['source_parent_present']=parent in parent_ids
-            item['history_raw_json']={'n3ds_metadata':{'raw_title_id':tid,'parent_title_id':parent,'kind':kind,'subtype':row.get('subtype'),'title_category':row.get('titleCategory'),'unique_id':row.get('uniqueId'),'name':row.get('name'),'long_description':row.get('longDescription'),'publisher':row.get('publisher'),'region':row.get('region'),'region_mask':row.get('regionMask'),'smdh_available':row.get('smdhAvailable'),'smdh_result':row.get('smdhResult'),'media_type':media},'exporter_version':doc.get('exporterVersion')}
+            item['history_raw_json']={'n3ds_metadata':{'raw_title_id':tid,'parent_title_id':parent,'kind':kind,'subtype':row.get('subtype'),'title_category':row.get('titleCategory'),'unique_id':row.get('uniqueId'),'product_code':row.get('productCode'),'name':row.get('name'),'long_description':row.get('longDescription'),'publisher':row.get('publisher'),'region':row.get('region'),'region_mask':row.get('regionMask'),'smdh_available':row.get('smdhAvailable'),'smdh_result':row.get('smdhResult'),'media_type':media},'exporter_version':doc.get('exporterVersion')}
             item['metadata_hint']={'publisher':row.get('publisher'),'region':row.get('region'),'description':clean_text(row.get('longDescription'))}
             items.append(item)
             if kind=='GAME':diag['games']+=1

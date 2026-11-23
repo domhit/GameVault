@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 from pathlib import Path
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
-UA={'User-Agent':'GameVault/1.6.0-dev14 (+https://github.com/domhit/GameVault)'}
+UA={'User-Agent':'GameVault/1.6.0-dev15 (+https://github.com/domhit/GameVault)'}
 WII_TITLES='https://www.gametdb.com/wiitdb.txt?LANG=EN'
 WII_GAME='https://www.gametdb.com/Wii/{game_id}'
 WIIU_TITLES='https://www.gametdb.com/wiiutdb.txt?LANG=DE'
@@ -215,3 +215,73 @@ def save_custom_cover(row,game_id,data_dir):
    p=Path(data_dir)/'covers'/f'{game_id}-gametdb{ext}';p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(r.content);return f'/covers/{p.name}',url
   except Exception:continue
  return None,None
+
+# Generic persistent XML catalogs for additional Nintendo platforms. These are downloaded
+# once and then reused from /data across container restarts.
+NINTENDO_XML_SOURCES={
+ 'Wii':os.getenv('GAMETDB_WII_URL_FULL','https://www.gametdb.com/wiitdb.zip?LANG=DE&WIIWARE=1&GAMECUBE=1'),
+ 'Nintendo 3DS':os.getenv('GAMETDB_3DS_URL','https://www.gametdb.com/3dstdb.zip?LANG=DE'),
+ 'Nintendo Switch':os.getenv('GAMETDB_SWITCH_URL','https://www.gametdb.com/switchtdb.zip?LANG=DE'),
+}
+_NINTENDO_FILES={'Wii':GAMETDB_CACHE_DIR/'wiitdb-DE-full.zip','Nintendo 3DS':GAMETDB_CACHE_DIR/'3dstdb-DE.zip','Nintendo Switch':GAMETDB_CACHE_DIR/'switchtdb-DE.zip'}
+_nintendo={p:{'records':{},'loaded_at':None,'source':None,'error':None,'bytes':None,'cache_file':str(_NINTENDO_FILES[p])} for p in NINTENDO_XML_SOURCES}
+def _generic_xml_records(raw):
+ if raw[:2]==b'PK':
+  with zipfile.ZipFile(io.BytesIO(raw)) as z:
+   names=[n for n in z.namelist() if n.lower().endswith('.xml')]
+   if not names:raise ValueError('GameTDB ZIP contains no XML')
+   raw=z.read(names[0])
+ root=ET.fromstring(raw);out={}
+ for game in root.findall('.//game'):
+  gid=str(game.get('id') or _xml_text(game,'id') or '').strip().upper()
+  if not gid:continue
+  english=original=first=None;direct=_xml_text(game,'title')
+  if direct:original=first=direct
+  for loc in game.findall('.//locale'):
+   lang=str(loc.get('lang') or loc.get('language') or '').upper();title=_xml_text(loc,'title')
+   if title and not first:first=title
+   if title and lang in ('EN','ENG','ENGLISH') and not english:english=title
+  for node in game.findall('.//title'):
+   title=' '.join((node.text or '').split()) if node.text else None;lang=str(node.get('lang') or node.get('language') or '').upper()
+   if title and not first:first=title
+   if title and lang in ('EN','ENG','ENGLISH') and not english:english=title
+  title=english or original or first or gid
+  out[gid]={'id':gid,'title':title,'title_en':english,'title_original':original,'region':_xml_text(game,'region'),'type':_xml_text(game,'type'),'developer':_xml_text(game,'developer'),'publisher':_xml_text(game,'publisher'),'genre':_xml_text(game,'genre')}
+ if not out:raise ValueError('GameTDB XML parsed zero games')
+ return out
+def nintendo_catalog(platform,force_download=False):
+ state=_nintendo[platform];path=_NINTENDO_FILES[platform];url=NINTENDO_XML_SOURCES[platform]
+ with _lock:
+  if state['records'] and not force_download:return state['records']
+ try:
+  if path.exists() and not force_download:raw=path.read_bytes();source='persistent-cache'
+  else:
+   r=requests.get(url,headers=UA,timeout=TIMEOUT);r.raise_for_status();raw=r.content;GAMETDB_CACHE_DIR.mkdir(parents=True,exist_ok=True);tmp=path.with_suffix('.tmp');tmp.write_bytes(raw);tmp.replace(path);source='download'
+  records=_generic_xml_records(raw)
+  with _lock:state.update({'records':records,'loaded_at':time.time(),'source':source,'error':None,'bytes':len(raw)})
+  return records
+ except Exception as e:
+  with _lock:state['error']=f'{type(e).__name__}: {e}'
+  raise
+def resolve_wii_full(game_id,fallback=None):
+ gid=normalize_wii_id(game_id)
+ if not gid:return {'ok':False,'name':fallback,'source':'console','error':'invalid Wii Game ID'}
+ try:
+  row=nintendo_catalog('Wii').get(gid)
+  return {'ok':bool(row),'name':row['title'] if row else fallback,'source':'GameTDB Wii XML' if row else 'console','record':row,'error':None if row else 'not found'}
+ except Exception as e:return {'ok':False,'name':fallback,'source':'console','error':str(e)}
+def resolve_wiiu(product_code,company_code,fallback=None):
+ try:
+  r=diagnose_wiiu(product_code,company_code);row=r['hits'][0] if r.get('hits') else None
+  return {'ok':bool(row),'name':row['title'] if row else fallback,'source':'GameTDB Wii U XML' if row else 'console','record':row,'candidate_ids':r.get('candidate_ids') or [],'error':None if row else 'not found'}
+ except Exception as e:return {'ok':False,'name':fallback,'source':'console','error':str(e)}
+def resolve_generic(platform,identifier,fallback=None):
+ # Product-code driven resolver for 3DS/Switch once exporters provide the GameTDB key.
+ key=re.sub(r'[^A-Z0-9]','',str(identifier or '').upper())
+ if not key:return {'ok':False,'name':fallback,'source':'console','error':'identifier/product code missing'}
+ try:
+  row=nintendo_catalog(platform).get(key)
+  return {'ok':bool(row),'name':row['title'] if row else fallback,'source':f'GameTDB {platform} XML' if row else 'console','record':row,'error':None if row else 'not found'}
+ except Exception as e:return {'ok':False,'name':fallback,'source':'console','error':str(e)}
+def nintendo_status():
+ with _lock:return {p:{'entries':len(v['records']),'loaded_at':v['loaded_at'],'source':v['source'],'error':v['error'],'bytes':v['bytes'],'cache_file':v['cache_file'],'url':NINTENDO_XML_SOURCES[p]} for p,v in _nintendo.items()}
