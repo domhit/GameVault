@@ -39,28 +39,35 @@
 - Console timezone property and canonical UTC normalization for providers that expose local wall-clock timestamps, especially Aurora history.
 
 
-### v1.6.0-dev9
+### v1.6.0-dev10
 - Fix startup regression in dev3 by importing SQLAlchemy `event`, required by the library-cache `after_commit` listener.
 
 
-#### v1.6.0-dev9
+#### v1.6.0-dev6
 - Fix cache/direct HTTP 500: use existing `installed_dict()` and the proven `serial(g)` package output; remove nonexistent serializer calls.
 - Never return an empty array on cache failure; direct PostgreSQL fallback remains authoritative.
 - Validate snapshot count against PostgreSQL and expose concrete errors in logs/status.
 
 
-#### v1.6.0-dev9
+#### v1.6.0-dev7
 - Add Xbox 360 Title-ID resolution through cached x360db data.
 - Add Xbox Classic Title-ID resolution through MobCat Xbox IDs, including regional multi-row handling.
 - Feed canonical Xbox names into the existing IGDB pipeline without overwriting console-native titles.
 - Add bulk Xbox resolver diagnostics, provider status, resolver trace integration and documentation.
 
 
-#### v1.6.0-dev9
+#### v1.6.0-dev8
 - Add cached GameTDB Wii Game-ID resolver before IGDB while preserving exporter-native titles and existing overrides as fallback.
 - Add Wii bulk resolver diagnostics and provider status.
 - Suspend expensive library-cache rebuilds during high-commit batch operations and rebuild once at batch completion.
 
 
-#### v1.6.0-dev9
-- Add GameTDB metadata/artwork fallback for Wii `CUSTOM` entries after IGDB not-found, plus a dedicated validation action.
+#### v1.6.0-dev10
+- Add GameTDB metadata/artwork fallback for Wii `CUSTOM` entries after IGDB not-found, plus a dedicated validation action.#### v1.6.0-dev4
+
+
+#### v1.6.0-dev10
+- Harden GameTDB detail parsing so empty fields cannot consume the following label as data.
+- Validate release dates and player counts before importing them.
+- Repair or clear only fields whose recorded source is `gametdb`; manual and IGDB fields remain protected.
+- Force a fresh GameTDB detail fetch during the explicit Wii Custom metadata repair action.

@@ -2,7 +2,7 @@ import os,re,threading,time,requests
 from bs4 import BeautifulSoup
 from pathlib import Path
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
-UA={'User-Agent':'GameVault/1.6.0-dev9 (+https://github.com/domhit/GameVault)'}
+UA={'User-Agent':'GameVault/1.6.0-dev10 (+https://github.com/domhit/GameVault)'}
 WII_TITLES='https://www.gametdb.com/wiitdb.txt?LANG=EN'
 WII_GAME='https://www.gametdb.com/Wii/{game_id}'
 CACHE_TTL=max(300,int(os.getenv('GAMETDB_CACHE_SECONDS','21600')))
@@ -43,19 +43,55 @@ def resolve_wii(game_id,fallback=None):
 def status():
  with _lock:return {'cached':_cache['rows'] is not None,'entries':len(_cache['rows'] or {}),'loaded_at':_cache['loaded_at'] or None,'error':_cache['error'],'url':WII_TITLES,'cache_ttl_seconds':CACHE_TTL,'detail_cache_entries':len(_details)}
 
+_DETAIL_LABELS={
+ 'id','region','type','languages','title','synopsis','developer','publisher','release date','genre','rating','players','online players',
+ 'accessories','required accessories','optional accessories','wi-fi players','wifi players','case color','rom','version','size','crc','md5','sha-1','sha1'
+}
+def _label_key(value):
+ value=' '.join(str(value or '').split()).strip().casefold().rstrip(':')
+ value=re.sub(r'\s*\([a-z]{2}(?:[-_][a-z]{2})?\)\s*$','',value).strip()
+ return value
+def _is_detail_label(value):
+ key=_label_key(value)
+ return key in _DETAIL_LABELS or bool(re.fullmatch(r'(?:title|synopsis)\s*\([a-z]{2}(?:[-_][a-z]{2})?\)',key))
 def _next_value(lines,label):
- label=label.casefold()
+ target=_label_key(label)
  for i,value in enumerate(lines):
-  v=value.strip();low=v.casefold()
-  if low==label and i+1<len(lines):return lines[i+1].strip()
-  if low.startswith(label+' '):return v[len(label):].strip()
+  key=_label_key(value)
+  if key==target:
+   if i+1>=len(lines) or _is_detail_label(lines[i+1]):return None
+   return lines[i+1].strip()
+  prefix=target+' '
+  if key.startswith(prefix):
+   candidate=' '.join(str(value).split())[len(target):].strip(' :')
+   return candidate if candidate and not _is_detail_label(candidate) else None
  return None
+def _valid_text(value):
+ value=' '.join(str(value or '').split()).strip()
+ return value if value and not _is_detail_label(value) else None
+def _valid_date(value):
+ value=_valid_text(value)
+ if not value:return None
+ m=re.fullmatch(r'(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})',value)
+ if not m:return None
+ y,mo,d=map(int,m.groups())
+ if not (1970<=y<=2100 and 1<=mo<=12 and 1<=d<=31):return None
+ return f'{y:04d}-{mo:02d}-{d:02d}'
+def _valid_players(value):
+ value=_valid_text(value)
+ if not value:return None
+ m=re.fullmatch(r'(\d{1,2})(?:\s*[-–]\s*(\d{1,2}))?',value)
+ if not m:return None
+ lo=int(m.group(1));hi=int(m.group(2) or lo)
+ return value if 1<=lo<=hi<=64 else None
 def _parse_detail_html(html,game_id):
  soup=BeautifulSoup(html,'html.parser');lines=[' '.join(x.split()) for x in soup.stripped_strings if ' '.join(x.split())]
- raw_type=_next_value(lines,'type');game_type=(raw_type or '').strip().upper() or None
- title=_next_value(lines,'title (EN)') or _next_value(lines,'title')
- synopsis=_next_value(lines,'synopsis (EN)') or _next_value(lines,'synopsis')
- developer=_next_value(lines,'developer');publisher=_next_value(lines,'publisher');release=_next_value(lines,'release date');genre=_next_value(lines,'genre');region=_next_value(lines,'region');languages=_next_value(lines,'languages');players=_next_value(lines,'players');online=_next_value(lines,'online players')
+ game_type=(_valid_text(_next_value(lines,'type')) or '').upper() or None
+ title=_valid_text(_next_value(lines,'title (EN)')) or _valid_text(_next_value(lines,'title'))
+ synopsis=_valid_text(_next_value(lines,'synopsis (EN)')) or _valid_text(_next_value(lines,'synopsis'))
+ developer=_valid_text(_next_value(lines,'developer'));publisher=_valid_text(_next_value(lines,'publisher'))
+ release=_valid_date(_next_value(lines,'release date'));genre=_valid_text(_next_value(lines,'genre'));region=_valid_text(_next_value(lines,'region'));languages=_valid_text(_next_value(lines,'languages'))
+ players=_valid_players(_next_value(lines,'players'));online=_valid_players(_next_value(lines,'online players')) or _valid_players(_next_value(lines,'wi-fi players')) or _valid_players(_next_value(lines,'wifi players'))
  images=[]
  for img in soup.find_all('img',src=True):
   url=requests.compat.urljoin('https://www.gametdb.com',img.get('src'))
@@ -76,8 +112,8 @@ def detail(game_id,force=False):
   with _lock:_details[gid]=row
   return dict(row)
  except Exception as e:return {'ok':False,'game_id':gid,'error':f'{type(e).__name__}: {e}'}
-def custom_detail(game_id):
- row=detail(game_id)
+def custom_detail(game_id,force=False):
+ row=detail(game_id,force=force)
  row['custom']=bool(row.get('ok') and str(row.get('type') or '').upper()=='CUSTOM')
  return row
 def save_custom_cover(row,game_id,data_dir):

@@ -120,3 +120,5 @@ These are explicit tested IDs, not a rule that every non-PCS application is disp
 ###### Wii GameTDB Custom metadata fallback
 - Normal Wii releases keep IGDB as primary metadata source.
 - When IGDB has no match, GameVault may inspect the public GameTDB page for the Wii Game ID. Only entries explicitly reported as `CUSTOM` may fill missing developer, publisher, genre, release date, synopsis, region, player hint and cover. Manual fields and existing local covers are never overwritten.
+
+- GameTDB detail parsing treats known page labels as structural markers. Empty fields remain empty and cannot become values such as `publisher`, `release date`, `rating`, or `players`. Explicit Custom enrichment may update or clear fields previously sourced from GameTDB, while manual and IGDB fields remain protected.
