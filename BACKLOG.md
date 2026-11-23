@@ -37,3 +37,7 @@
 
 - Further PS3 MMS field/type decoding and optional SaveData/trophy historical-footprint support without conflating SaveData timestamps with Last Played.
 - Console timezone property and canonical UTC normalization for providers that expose local wall-clock timestamps, especially Aurora history.
+
+
+### v1.6.0-dev4
+- Fix startup regression in dev3 by importing SQLAlchemy `event`, required by the library-cache `after_commit` listener.
