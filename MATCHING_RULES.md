@@ -149,3 +149,8 @@ These are explicit tested IDs, not a rule that every non-PCS application is disp
 - libctru exporter Product Codes such as `CTR-P-AMKP` are structurally normalized to GameTDB ID `AMKP`; hyphen removal to `CTRPAMKP` is explicitly forbidden.
 - Lookup is exact against the persistent local `3dstdb.zip?LANG=DE` XML index. TitleID and Unique ID are not guessed into GameTDB identifiers.
 - The diagnostic reports full ProductCode, derived candidate, exact GameTDB hit, local catalog size and unmatched examples. The central 3DS canonical-name resolver uses the same mapping before IGDB.
+
+
+######### Nintendo 3DS KTR ProductCodes (dev18)
+- The Nintendo 3DS GameTDB ProductCode resolver accepts both `CTR-X-ABCD` and `KTR-X-ABCD` forms and maps either structurally to exact GameTDB key `ABCD`.
+- Existing four-character normalized IDs remain accepted; TitleID/UniqueID guessing remains forbidden.

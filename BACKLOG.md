@@ -111,7 +111,11 @@
 - Add an always-visible close button to the Quellen & Resolver header and make its action footer scrollable/wrapping on constrained screens.
 
 
-######### v1.6.0-dev17
+######### v1.6.0-dev18
 - Fix Nintendo 3DS GameTDB mapping: parse `CTR-X-ABCD` Product Codes to exact GameTDB key `ABCD` rather than stripping punctuation into an invalid `CTRXABCD` key.
 - Replace the stale missing-exporter diagnostic message with detailed ProductCode/candidate/hit coverage and examples.
 - Use the corrected mapping in the central Nintendo 3DS canonical-name resolver before IGDB.
+
+
+########## v1.6.0-dev18
+- Extend the validated Nintendo 3DS ProductCode mapping to accept KTR-prefixed ProductCodes in addition to CTR while preserving the exact GameTDB lookup and all dev17 behavior.

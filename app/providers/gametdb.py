@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 from pathlib import Path
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
-UA={'User-Agent':'GameVault/1.6.0-dev17 (+https://github.com/domhit/GameVault)'}
+UA={'User-Agent':'GameVault/1.6.0-dev18 (+https://github.com/domhit/GameVault)'}
 WII_TITLES='https://www.gametdb.com/wiitdb.txt?LANG=EN'
 WII_GAME='https://www.gametdb.com/Wii/{game_id}'
 WIIU_TITLES='https://www.gametdb.com/wiiutdb.txt?LANG=DE'
@@ -281,8 +281,8 @@ def n3ds_id_candidates(product_code):
  def add(v):
   v=re.sub(r'[^A-Z0-9]','',str(v or '').upper())
   if re.fullmatch(r'[A-Z0-9]{4,8}',v) and v not in out:out.append(v)
- # libctru normally returns CTR-P-AMKP; GameTDB uses AMKP.
- m=re.fullmatch(r'CTR-[A-Z0-9]-([A-Z0-9]{4,8})',raw)
+ # libctru Product Codes use CTR-/KTR- prefixes; GameTDB uses the trailing game code, e.g. AMKP.
+ m=re.fullmatch(r'(?:CTR|KTR)-[A-Z0-9]-([A-Z0-9]{4,8})',raw)
  if m:add(m.group(1))
  # Keep already-normalized exporter values usable without guessing from TitleID.
  if re.fullmatch(r'[A-Z0-9]{4}',raw):add(raw)
