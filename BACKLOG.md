@@ -39,5 +39,12 @@
 - Console timezone property and canonical UTC normalization for providers that expose local wall-clock timestamps, especially Aurora history.
 
 
-### v1.6.0-dev4
+### v1.6.0-dev5
 - Fix startup regression in dev3 by importing SQLAlchemy `event`, required by the library-cache `after_commit` listener.
+
+
+#### v1.6.0-dev5
+- Make the full-library cache fail-safe: cache build failures can never return an empty library.
+- Reuse the proven direct library serializer for both cache snapshots and direct fallback.
+- Validate cache item count against PostgreSQL before publishing a snapshot; log and expose rebuild errors.
+- Serve the last good cache while a new generation rebuilds, and use `DIRECT-FALLBACK` on cold/broken caches.
