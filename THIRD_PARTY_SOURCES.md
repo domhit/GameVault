@@ -8,6 +8,7 @@
 - Axekinn/ps4-scraper datasets: PS4 catalog/update-summary fallback used by online resolver helpers.
 - xenia-manager/x360db: Xbox 360 Title-ID to canonical-name resolution plus optional metadata/cover enrichment.
 - MobCat Original Xbox Title ID Database/API: Xbox Classic Title-ID/XMID/region resolution and canonical names.
+- GameTDB/WiiTDB: Wii six-character Game-ID to canonical English title resolution using the downloadable Wii title list.
 - gauss77/Multiman-Resources and st-alves/ps3-covers: PS3 covers.
 - xlenore/ps2-covers: PS2 covers.
 

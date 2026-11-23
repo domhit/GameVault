@@ -45,7 +45,7 @@ class WiiGameVaultProvider(ConsoleProvider):
         d=self._doc(raw);items=[];diag={'database_path':self.database_path,'schema_version':d.get('schemaVersion'),'exporter_version':d.get('exporterVersion'),'source':d.get('source'),'cache_found':d.get('cacheFound'),'cache_version':d.get('cacheVersion'),'source_rows':len(d['games']),'valid_games':0,'invalid_games':0,'wbfs':0,'iso':0,'other_format':0,'with_play_count':0,'invalid_examples':[]}
         seen=set()
         for row in d['games']:
-            gid=str(row.get('gameId') or '').upper().strip();cache_title=' '.join(str(row.get('title') or gid).split());title=TITLE_OVERRIDES.get(gid,cache_title);path=str(row.get('path') or '');fmt=str(row.get('format') or 'UNKNOWN').upper();play=row.get('playCount')
+            gid=str(row.get('gameId') or '').upper().strip();cache_title=' '.join(str(row.get('title') or gid).split());title=cache_title;path=str(row.get('path') or '');fmt=str(row.get('format') or 'UNKNOWN').upper();play=row.get('playCount')
             if not GAME_ID_RE.fullmatch(gid) or not title or not path:
                 diag['invalid_games']+=1
                 if len(diag['invalid_examples'])<10:diag['invalid_examples'].append({'gameId':gid,'title':title,'path':path})
@@ -58,7 +58,7 @@ class WiiGameVaultProvider(ConsoleProvider):
             if play is not None and int(play or 0)>0:diag['with_play_count']+=1
             item=InstalledTitle('Wii',gid,title,None,'Wii Game','GameVault Wii U Exporter / USB Loader GX',path,gid,'Wii Game','usb1').to_dict()
             item['play_count']=int(play or 0) if play is not None else None;item['history_source']='USB Loader GX GXGameStatistics.cfg' if item['play_count'] is not None else None
-            item['history_raw_json']={'usbloadergx':{'cache_title':cache_title,'title_override':TITLE_OVERRIDES.get(gid),'format':fmt,'cache_version':d.get('cacheVersion'),'cache_path':d.get('cachePath'),'statistics_path':d.get('statisticsPath')}}
+            item['history_raw_json']={'usbloadergx':{'cache_title':cache_title,'title_override_fallback':TITLE_OVERRIDES.get(gid),'format':fmt,'cache_version':d.get('cacheVersion'),'cache_path':d.get('cachePath'),'statistics_path':d.get('statisticsPath')}}
             item['metadata_hint']={'media_format':fmt}
             items.append(item)
         diag['unique_game_ids']=len(seen);return {'items':items,'diagnostics':diag}

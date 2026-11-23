@@ -102,3 +102,16 @@ These are explicit tested IDs, not a rule that every non-PCS application is disp
 - Console titles are never overwritten by resolver output. Resolver names are logged and used only as canonical IGDB search input.
 - Existing confirmed IGDB IDs still take priority over any title search.
 - Missing or unavailable resolver data falls back to the original console title.
+
+
+#### Wii / GameTDB resolver
+- Wii keeps the title read from the USB Loader GX/GameVault exporter as the console-native title.
+- Resolver order for an unresolved Wii game is: six-character Wii Game ID -> cached GameTDB English title -> existing tested `TITLE_OVERRIDES` fallback -> console/exporter title -> IGDB.
+- GameTDB resolver output is logged and used as IGDB search input; it does not overwrite the stored console-native title.
+- GameTDB's Wii title list is cached in memory for 6 hours by default (`GAMETDB_CACHE_SECONDS`). One bulk list is loaded, never one HTTP request per game.
+
+#### Library cache during batch jobs
+- Large mutation jobs suspend automatic library-cache rebuild scheduling while commits are in progress.
+- Commits still mark the cache dirty and advance its generation.
+- When the outer batch ends, exactly one debounced background rebuild is scheduled.
+- Direct fallback and last-known-good snapshot behavior remain unchanged.
