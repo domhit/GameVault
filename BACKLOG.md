@@ -1,6 +1,10 @@
 # GameVault Backlog
 
-## v1.6 - Resolver quality
+## v1.6 - Active development
+
+- Frontend startup: keep the entire library eagerly loaded and fully rendered. No pagination, no batch append and no scroll-triggered fetching. dev1 adds a staged startup loader and parallel initial data requests.
+
+## Resolver quality
 
 - Research and implement authoritative Title-ID -> canonical-name resolvers comparable to SerialStation for **Xbox Classic / Xbox 360**.
 - Research equivalent canonical-name resolution for **Nintendo Wii / Wii U / Nintendo 3DS** and later Nintendo Switch.
