@@ -39,7 +39,7 @@
 - Console timezone property and canonical UTC normalization for providers that expose local wall-clock timestamps, especially Aurora history.
 
 
-### v1.6.0-dev10
+### v1.6.0-dev11
 - Fix startup regression in dev3 by importing SQLAlchemy `event`, required by the library-cache `after_commit` listener.
 
 
@@ -62,12 +62,17 @@
 - Suspend expensive library-cache rebuilds during high-commit batch operations and rebuild once at batch completion.
 
 
-#### v1.6.0-dev10
+#### v1.6.0-dev11
 - Add GameTDB metadata/artwork fallback for Wii `CUSTOM` entries after IGDB not-found, plus a dedicated validation action.#### v1.6.0-dev4
 
 
-#### v1.6.0-dev10
+#### v1.6.0-dev11
 - Harden GameTDB detail parsing so empty fields cannot consume the following label as data.
 - Validate release dates and player counts before importing them.
 - Repair or clear only fields whose recorded source is `gametdb`; manual and IGDB fields remain protected.
 - Force a fresh GameTDB detail fetch during the explicit Wii Custom metadata repair action.
+
+
+#### v1.6.0-dev11
+- Add read-only Wii U -> GameTDB ID-mapping diagnostics using exporter product/company codes.
+- Move provider/maintenance actions (IGDB refresh, PS4 updates, PlayStation cover refresh, legacy/local cover repair) out of the primary top toolbar into `Quellen & Resolver`.
