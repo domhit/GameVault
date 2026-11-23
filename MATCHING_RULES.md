@@ -128,3 +128,10 @@ These are explicit tested IDs, not a rule that every non-PCS application is disp
 - dev11 does not yet use GameTDB as a Wii U resolver. It performs a read-only coverage diagnostic.
 - The Wii U exporter already preserves `productCode` and `companyCode` in InstalledGame raw metadata. Candidate GameTDB IDs are derived from the four-character Wii U product token plus the final two characters of the Nintendo company code: `WUP-P-ABAP` + `0001` -> `ABAP01`. The four-character token (`ABAP`) is retained only as a secondary fallback for GameTDB entries without a company suffix.
 - No Wii U Game, Title ID, Product Code or metadata is changed by the diagnostic. Resolver implementation is allowed only after real-hardware coverage is reviewed.
+
+
+##### Wii U / GameTDB full XML cache (dev14)
+- Wii U no longer uses the incomplete `wiiutdb.txt?LANG=EN` feed. GameVault downloads the complete `wiiutdb.zip?LANG=DE` XML catalog once and stores it persistently under `/data/provider-cache/gametdb/wiiutdb-DE.zip`.
+- Container restarts load the persistent ZIP locally; no periodic HTTP refresh is required. A manual refresh action is available under `Quellen & Resolver`.
+- Both GameTDB ID forms are indexed because the real catalog contains both: 6-character Product+Company IDs and 4-character Product IDs. Candidate priority remains exact 6-character ID, then exact 4-character ID.
+- The Wii U diagnostic remains read-only in dev14. Existing Wii U Game/IGDB metadata is not modified.

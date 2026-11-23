@@ -89,3 +89,10 @@
 - Preserve derived ProductCode/CompanyCode candidates even when the remote catalog request fails.
 - Expose Wii U GameTDB feed diagnostics (entry count, response bytes/content type, first/last IDs) in the diagnostic result so partial-feed behavior is visible.
 - Diagnostic remains strictly read-only.
+
+
+###### v1.6.0-dev14
+- Replace the partial Wii U EN TXT feed with a one-time persistent download of the complete German `wiiutdb.zip` XML catalog.
+- Parse/index 4- and 6-character Wii U GameTDB IDs plus useful catalog metadata locally; container restarts reuse the cached ZIP.
+- Add an explicit manual Wii U GameTDB cache refresh action.
+- Keep Wii U mapping read-only until the full 58-title hardware-validated diagnostic is confirmed.

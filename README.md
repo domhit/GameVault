@@ -1,4 +1,4 @@
-# GameVault v1.6.0-dev13
+# GameVault v1.6.0-dev14
 
 GameVault is a self-hosted game collection, backup inventory and console-inventory application built with FastAPI and PostgreSQL for Docker/Portainer deployments.
 
