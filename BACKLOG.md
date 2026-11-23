@@ -2,7 +2,7 @@
 
 ## v1.6 - Active development
 
-- Frontend startup: keep the entire library eagerly loaded and fully rendered. No pagination, no batch append and no scroll-triggered fetching. dev1 adds a staged startup loader and parallel initial data requests. dev2 measures server DB/build/JSON time plus browser transfer/parse/render time before changing the API payload.
+- Frontend startup: keep the entire library eagerly loaded and fully rendered. No pagination, no batch append and no scroll-triggered fetching. dev1 adds a staged startup loader and parallel initial data requests. dev3 adds a precomputed full-library read cache that is invalidated by database commits and rebuilt immediately in a debounced background task.
 
 ## Resolver quality
 
