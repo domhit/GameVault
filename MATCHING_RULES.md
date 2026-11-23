@@ -143,3 +143,9 @@ These are explicit tested IDs, not a rule that every non-PCS application is disp
 - Nintendo 3DS uses persistent `3dstdb.zip?LANG=DE`, but productive resolution is enabled only when a future exporter supplies `productCode`; current TitleID/uniqueId data are not guessed into GameTDB IDs.
 - Nintendo Switch infrastructure uses persistent `switchtdb.zip?LANG=DE`; no console resolver is activated until real exporter/hardware identifier fields exist.
 - All XML catalogs download once to `/data/provider-cache/gametdb` and persist across container restarts; manual force-refresh APIs are available.
+
+
+######## Nintendo 3DS ProductCode mapping (dev17)
+- libctru exporter Product Codes such as `CTR-P-AMKP` are structurally normalized to GameTDB ID `AMKP`; hyphen removal to `CTRPAMKP` is explicitly forbidden.
+- Lookup is exact against the persistent local `3dstdb.zip?LANG=DE` XML index. TitleID and Unique ID are not guessed into GameTDB identifiers.
+- The diagnostic reports full ProductCode, derived candidate, exact GameTDB hit, local catalog size and unmatched examples. The central 3DS canonical-name resolver uses the same mapping before IGDB.

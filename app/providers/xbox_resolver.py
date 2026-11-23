@@ -2,7 +2,7 @@ import json, os, re, threading, time, requests
 from urllib.parse import quote
 
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
-UA={'User-Agent':'GameVault/1.6.0-dev16 (+https://github.com/domhit/GameVault)'}
+UA={'User-Agent':'GameVault/1.6.0-dev17 (+https://github.com/domhit/GameVault)'}
 X360_INDEX='https://raw.githubusercontent.com/xenia-manager/x360db/main/games.json'
 MOBcat_API='https://mobcat.zip/XboxIDs/api.php'
 CACHE_TTL=max(300,int(os.getenv('XBOX_RESOLVER_CACHE_SECONDS','21600')))

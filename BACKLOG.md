@@ -109,3 +109,9 @@
 - Accept Nintendo 3DS exporter schemas 3 and 4 and retain ProductCode result diagnostics.
 - Add one action to download and persist all four Nintendo GameTDB catalogs: Wii, Wii U, Nintendo 3DS and Nintendo Switch.
 - Add an always-visible close button to the Quellen & Resolver header and make its action footer scrollable/wrapping on constrained screens.
+
+
+######### v1.6.0-dev17
+- Fix Nintendo 3DS GameTDB mapping: parse `CTR-X-ABCD` Product Codes to exact GameTDB key `ABCD` rather than stripping punctuation into an invalid `CTRXABCD` key.
+- Replace the stale missing-exporter diagnostic message with detailed ProductCode/candidate/hit coverage and examples.
+- Use the corrected mapping in the central Nintendo 3DS canonical-name resolver before IGDB.

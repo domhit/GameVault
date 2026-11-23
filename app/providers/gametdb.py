@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 from pathlib import Path
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
-UA={'User-Agent':'GameVault/1.6.0-dev16 (+https://github.com/domhit/GameVault)'}
+UA={'User-Agent':'GameVault/1.6.0-dev17 (+https://github.com/domhit/GameVault)'}
 WII_TITLES='https://www.gametdb.com/wiitdb.txt?LANG=EN'
 WII_GAME='https://www.gametdb.com/Wii/{game_id}'
 WIIU_TITLES='https://www.gametdb.com/wiiutdb.txt?LANG=DE'
@@ -275,6 +275,27 @@ def resolve_wiiu(product_code,company_code,fallback=None):
   r=diagnose_wiiu(product_code,company_code);row=r['hits'][0] if r.get('hits') else None
   return {'ok':bool(row),'name':row['title'] if row else fallback,'source':'GameTDB Wii U XML' if row else 'console','record':row,'candidate_ids':r.get('candidate_ids') or [],'error':None if row else 'not found'}
  except Exception as e:return {'ok':False,'name':fallback,'source':'console','error':str(e)}
+def n3ds_id_candidates(product_code):
+ raw=''.join(str(product_code or '').upper().split())
+ out=[]
+ def add(v):
+  v=re.sub(r'[^A-Z0-9]','',str(v or '').upper())
+  if re.fullmatch(r'[A-Z0-9]{4,8}',v) and v not in out:out.append(v)
+ # libctru normally returns CTR-P-AMKP; GameTDB uses AMKP.
+ m=re.fullmatch(r'CTR-[A-Z0-9]-([A-Z0-9]{4,8})',raw)
+ if m:add(m.group(1))
+ # Keep already-normalized exporter values usable without guessing from TitleID.
+ if re.fullmatch(r'[A-Z0-9]{4}',raw):add(raw)
+ return out
+
+def resolve_3ds(product_code,fallback=None):
+ candidates=n3ds_id_candidates(product_code)
+ if not candidates:return {'ok':False,'name':fallback,'source':'console','candidate_ids':[],'error':'unsupported 3DS ProductCode format'}
+ try:
+  records=nintendo_catalog('Nintendo 3DS');hits=[records[x] for x in candidates if x in records];row=hits[0] if hits else None
+  return {'ok':bool(row),'name':row['title'] if row else fallback,'source':'GameTDB Nintendo 3DS XML' if row else 'console','record':row,'hits':hits,'candidate_ids':candidates,'error':None if row else 'not found'}
+ except Exception as e:return {'ok':False,'name':fallback,'source':'console','candidate_ids':candidates,'error':f'{type(e).__name__}: {e}'}
+
 def resolve_generic(platform,identifier,fallback=None):
  # Product-code driven resolver for 3DS/Switch once exporters provide the GameTDB key.
  key=re.sub(r'[^A-Z0-9]','',str(identifier or '').upper())
