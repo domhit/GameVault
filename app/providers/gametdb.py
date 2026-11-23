@@ -2,7 +2,7 @@ import os,re,threading,time,requests
 from bs4 import BeautifulSoup
 from pathlib import Path
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
-UA={'User-Agent':'GameVault/1.6.0-dev11 (+https://github.com/domhit/GameVault)'}
+UA={'User-Agent':'GameVault/1.6.0-dev12 (+https://github.com/domhit/GameVault)'}
 WII_TITLES='https://www.gametdb.com/wiitdb.txt?LANG=EN'
 WII_GAME='https://www.gametdb.com/Wii/{game_id}'
 WIIU_TITLES='https://www.gametdb.com/wiiutdb.txt?LANG=EN'
@@ -46,15 +46,20 @@ def wiiu_catalog(force=False):
   with _lock:_wiiu_cache['error']=f'{type(e).__name__}: {e}'
   raise
 def wiiu_id_candidates(product_code,company_code=None):
- raw=''.join(str(product_code or '').upper().split());company=re.sub(r'[^A-Z0-9]','',str(company_code or '').upper())
- parts=[re.sub(r'[^A-Z0-9]','',x) for x in raw.split('-') if x]
- product=parts[-1] if parts else re.sub(r'[^A-Z0-9]','',raw)
+ # Wii U Product Codes look like WUP-P-ABAP: the final four characters are
+ # already GameTDB's region-specific product token. GameTDB then appends the
+ # two-character Nintendo company code (0001 -> 01, 0008 -> 08, 0052 -> 52).
+ raw=''.join(str(product_code or '').upper().split())
+ m=re.fullmatch(r'WUP-[A-Z0-9]-([A-Z0-9]{4})',raw)
+ product=m.group(1) if m else None
+ company=re.sub(r'[^A-Z0-9]','',str(company_code or '').upper())
+ company_suffix=company[-2:] if len(company)>=2 else None
  out=[]
  def add(v):
   v=re.sub(r'[^A-Z0-9]','',str(v or '').upper())
-  if 4<=len(v)<=6 and v not in out:out.append(v)
- add(product)
- if product and company:add(product+company)
+  if re.fullmatch(r'[A-Z0-9]{4,6}',v) and v not in out:out.append(v)
+ if product and company_suffix:add(product+company_suffix)
+ if product:add(product) # some eShop entries in GameTDB intentionally have only four chars
  return out
 def diagnose_wiiu(product_code,company_code=None):
  candidates=wiiu_id_candidates(product_code,company_code);rows=wiiu_catalog();hits=[{'id':x,'title':rows[x]} for x in candidates if x in rows]

@@ -126,5 +126,5 @@ These are explicit tested IDs, not a rule that every non-PCS application is disp
 
 #### Wii U / GameTDB diagnostic mapping
 - dev11 does not yet use GameTDB as a Wii U resolver. It performs a read-only coverage diagnostic.
-- The Wii U exporter already preserves `productCode` and `companyCode` in InstalledGame raw metadata. Candidate GameTDB IDs are derived conservatively from the product-code suffix, optionally with the company code appended, and are checked against the downloadable Wii U title list.
+- The Wii U exporter already preserves `productCode` and `companyCode` in InstalledGame raw metadata. Candidate GameTDB IDs are derived from the four-character Wii U product token plus the final two characters of the Nintendo company code: `WUP-P-ABAP` + `0001` -> `ABAP01`. The four-character token (`ABAP`) is retained only as a secondary fallback for GameTDB entries without a company suffix.
 - No Wii U Game, Title ID, Product Code or metadata is changed by the diagnostic. Resolver implementation is allowed only after real-hardware coverage is reviewed.

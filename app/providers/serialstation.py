@@ -2,7 +2,7 @@ import os,re,requests
 from urllib.parse import quote
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
 BASE='https://api.serialstation.com/v1'
-UA={'User-Agent':'GameVault/1.6.0-dev11 (+https://github.com/domhit/GameVault)'}
+UA={'User-Agent':'GameVault/1.6.0-dev12 (+https://github.com/domhit/GameVault)'}
 PS_PLATFORMS={'PlayStation 1','PlayStation 2','PlayStation Portable','PlayStation Vita','PlayStation 3','PlayStation 4'}
 def normalize_title_id(v):
  s=re.sub(r'[^A-Z0-9]','',str(v or '').upper())
