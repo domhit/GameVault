@@ -6,7 +6,7 @@
 
 ## Resolver quality
 
-- Research and implement authoritative Title-ID -> canonical-name resolvers comparable to SerialStation for **Xbox Classic / Xbox 360**.
+- Validate and refine the new **Xbox Classic / Xbox 360** resolver coverage against the real collection; investigate unmatched IDs and regional edge cases.
 - Research equivalent canonical-name resolution for **Nintendo Wii / Wii U / Nintendo 3DS** and later Nintendo Switch.
 - Evaluate **TheGamesDB** as an optional retro resolver, especially platform-constrained name lookup and ROM-hash resolution, while keeping IGDB as the primary metadata store.
 - Replace remaining platform-specific title overrides with maintainable resolver data where an authoritative source exists.
@@ -39,11 +39,18 @@
 - Console timezone property and canonical UTC normalization for providers that expose local wall-clock timestamps, especially Aurora history.
 
 
-### v1.6.0-dev6
+### v1.6.0-dev7
 - Fix startup regression in dev3 by importing SQLAlchemy `event`, required by the library-cache `after_commit` listener.
 
 
-#### v1.6.0-dev6
+#### v1.6.0-dev7
 - Fix cache/direct HTTP 500: use existing `installed_dict()` and the proven `serial(g)` package output; remove nonexistent serializer calls.
 - Never return an empty array on cache failure; direct PostgreSQL fallback remains authoritative.
 - Validate snapshot count against PostgreSQL and expose concrete errors in logs/status.
+
+
+#### v1.6.0-dev7
+- Add Xbox 360 Title-ID resolution through cached x360db data.
+- Add Xbox Classic Title-ID resolution through MobCat Xbox IDs, including regional multi-row handling.
+- Feed canonical Xbox names into the existing IGDB pipeline without overwriting console-native titles.
+- Add bulk Xbox resolver diagnostics, provider status, resolver trace integration and documentation.

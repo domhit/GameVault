@@ -93,3 +93,12 @@ These are explicit tested IDs, not a rule that every non-PCS application is disp
 - `NLST` and `MLSD` are not relied upon because the tested FTPVita server returns `502` for them.
 - Known native Title IDs are direct-probed with `RETR`.
 - Classic `LIST` is used for directories where enumeration is required, such as DLC children, PSPemu presence and recursive installed-size calculation.
+
+
+### Xbox resolver rules
+
+- Xbox 360 uses the cached x360db `games.json` index. Primary and `alternative_id` values are indexed as uppercase 8-character Title IDs.
+- Xbox Classic uses MobCat's JSON API by Title ID. A Title ID may return multiple regional/XMID rows; GameVault selects the most frequent canonical full name and preserves region information in the resolver result.
+- Console titles are never overwritten by resolver output. Resolver names are logged and used only as canonical IGDB search input.
+- Existing confirmed IGDB IDs still take priority over any title search.
+- Missing or unavailable resolver data falls back to the original console title.
