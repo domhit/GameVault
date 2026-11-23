@@ -1,7 +1,7 @@
 import csv, io, json, os, re, requests
 from pathlib import Path
 TIMEOUT=int(os.getenv('METADATA_TIMEOUT','20'))
-UA={'User-Agent':'GameVault/1.6.0-dev5 (+https://github.com/domhit/GameVault)'}
+UA={'User-Agent':'GameVault/1.6.0-dev6 (+https://github.com/domhit/GameVault)'}
 X360_INDEX='https://raw.githubusercontent.com/xenia-manager/x360db/main/games.json'
 PS4_TITLES='https://raw.githubusercontent.com/Axekinn/ps4-scraper/main/ps4_titles.csv'
 PS4_UPDATES='https://raw.githubusercontent.com/Axekinn/ps4-scraper/main/ps4_titles_updates/ps4_titles_update_summary.csv'
