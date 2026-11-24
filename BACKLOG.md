@@ -1,6 +1,7 @@
 # GameVault Backlog
 
 ## v1.6 release preparation
+- Duplikat-Merge offers explicit left/right survivor choice; multi-installation maintenance groups games with two or more console/ROM paths and distinguishes same-console redundancy from normal cross-console availability.
 - Duplikat-Merge preserves InstalledGame paths and saved selections on the surviving library record.
 - Duplikatvergleich zeigt entscheidungsrelevante Installations-/ROM-Pfade und begrenzte Cover statt allgemeiner Metadatenfelder.
 - Duplikatsuche uses indexed same-platform candidate blocks and bounded result output instead of a full all-pairs comparison.
