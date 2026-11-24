@@ -1,121 +1,31 @@
 # GameVault Backlog
 
-## v1.6 - Active development
+## v1.6 release preparation
+- Final regression testing across all real console inventories, library cache, metadata refresh, covers and responsive UI before `v1.6.0-rc1`.
+- Keep resolver rules and third-party attribution synchronized with implementation.
 
-- Frontend startup: keep the entire library eagerly loaded and fully rendered. No pagination, no batch append and no scroll-triggered fetching. dev1 adds a staged startup loader and parallel initial data requests. dev3 adds a precomputed full-library read cache that is invalidated by database commits and rebuilt immediately in a debounced background task.
-
-## Resolver quality
-
-- Validate and refine the new **Xbox Classic / Xbox 360** resolver coverage against the real collection; investigate unmatched IDs and regional edge cases.
-- Validate the new **Wii / GameTDB** resolver against the real collection; then research equivalent canonical-name resolution for **Wii U / Nintendo 3DS** and later Nintendo Switch.
-- Evaluate **TheGamesDB** as an optional retro resolver, especially platform-constrained name lookup and ROM-hash resolution, while keeping IGDB as the primary metadata store.
-- Replace remaining platform-specific title overrides with maintainable resolver data where an authoritative source exists.
+## Backup inventory and operations
+- Design a platform-spanning backup inventory/scan. The existing PS4 XLSX package import stores filename, Title ID, category, version, storage location and size; equivalent source spreadsheets/inventories for Xbox and other platforms should be evaluated as structured backup sources.
+- Reconcile owned library entries, console-installed inventory and backup-file inventory without conflating backup presence with installation.
+- Retain the current Package size audit as a maintenance tool until the generalized backup scan replaces or absorbs it.
+- Backup/restore bundle for PostgreSQL dump, covers, persistent GameTDB catalogs, exports and non-secret configuration.
+- Credential encryption / secret-store strategy; console credentials are currently stored in PostgreSQL.
 
 ## Console inventory
+- Nintendo Switch / Atmosphere: defer until the test console is available; keep the real-hardware-first provider approach.
+- Determine reliable installed-size data for Wii U and Wii/vWii without expensive full directory walks where possible.
+- Investigate Xbox 360 DLC inventory and active/disabled Title Update state.
+- Optional ps3netsrv/NAS mapping so `/netX` PS3 games can obtain sizes from the NAS.
+- Consider dedicated handling for Vita fan ports and PlayStation Mobile content.
 
-- **Nintendo Switch / Atmosphere**: deferred until the test console is available again; use the same real-hardware-first provider approach.
-- Determine reliable installed-size data for **Wii U** titles and **Wii/vWii** content without expensive full directory walks where possible.
-- Investigate reliable Xbox 360 DLC inventory and active/disabled Title Update state.
-- Optional `ps3netsrv`/NAS mapping so `/netX` PS3 games can obtain sizes from the NAS.
-- Consider dedicated import handling for Vita fan ports and PlayStation Mobile entries currently preserved as classified special content.
-
-## Library and metadata
-
+## Resolver and metadata quality
+- Evaluate TheGamesDB only as an optional retro fallback if it materially improves real unmatched ROMs; IGDB remains primary.
+- Replace remaining explicit title overrides only where an authoritative identifier source is validated.
 - Saved filters and tag manager / bulk tagging.
-- Continue improving unusual port/remaster/original-platform edge cases only from real examples.
+- Continue unusual port/remaster/original-platform rules only from real examples.
 - Restore/extend remote update availability where authoritative public sources exist.
-- Optional cached ROM hashes for RetroArch if a resolver such as TheGamesDB proves materially better on real unmatched titles.
-
-## Backup and operations
-
-- Backup/restore bundle for PostgreSQL dump, covers, JSON/CSV exports and non-secret configuration.
-- Credential encryption / secret-store strategy; console credentials are currently stored in PostgreSQL.
-- Background/cancellable console size scans if synchronous scans become too slow.
-- Content-change detection to avoid recalculating unchanged folder sizes.
+- Optional cached ROM hashes only if a hash resolver proves useful on real unmatched titles.
 
 ## Historical / research
-
-- Further PS3 MMS field/type decoding and optional SaveData/trophy historical-footprint support without conflating SaveData timestamps with Last Played.
-- Console timezone property and canonical UTC normalization for providers that expose local wall-clock timestamps, especially Aurora history.
-
-
-### v1.6.0-dev11
-- Fix startup regression in dev3 by importing SQLAlchemy `event`, required by the library-cache `after_commit` listener.
-
-
-#### v1.6.0-dev6
-- Fix cache/direct HTTP 500: use existing `installed_dict()` and the proven `serial(g)` package output; remove nonexistent serializer calls.
-- Never return an empty array on cache failure; direct PostgreSQL fallback remains authoritative.
-- Validate snapshot count against PostgreSQL and expose concrete errors in logs/status.
-
-
-#### v1.6.0-dev7
-- Add Xbox 360 Title-ID resolution through cached x360db data.
-- Add Xbox Classic Title-ID resolution through MobCat Xbox IDs, including regional multi-row handling.
-- Feed canonical Xbox names into the existing IGDB pipeline without overwriting console-native titles.
-- Add bulk Xbox resolver diagnostics, provider status, resolver trace integration and documentation.
-
-
-#### v1.6.0-dev8
-- Add cached GameTDB Wii Game-ID resolver before IGDB while preserving exporter-native titles and existing overrides as fallback.
-- Add Wii bulk resolver diagnostics and provider status.
-- Suspend expensive library-cache rebuilds during high-commit batch operations and rebuild once at batch completion.
-
-
-#### v1.6.0-dev11
-- Add GameTDB metadata/artwork fallback for Wii `CUSTOM` entries after IGDB not-found, plus a dedicated validation action.#### v1.6.0-dev4
-
-
-#### v1.6.0-dev11
-- Harden GameTDB detail parsing so empty fields cannot consume the following label as data.
-- Validate release dates and player counts before importing them.
-- Repair or clear only fields whose recorded source is `gametdb`; manual and IGDB fields remain protected.
-- Force a fresh GameTDB detail fetch during the explicit Wii Custom metadata repair action.
-
-
-#### v1.6.0-dev11
-- Add read-only Wii U -> GameTDB ID-mapping diagnostics using exporter product/company codes.
-- Move provider/maintenance actions (IGDB refresh, PS4 updates, PlayStation cover refresh, legacy/local cover repair) out of the primary top toolbar into `Quellen & Resolver`.
-
-
-#### v1.6.0-dev12
-- Correct Wii U GameTDB diagnostic ID derivation: use the final four characters of `WUP-X-ABCP` plus the final two characters of the four-character company code (`0001 -> 01`, `0008 -> 08`, `0052 -> 52`).
-- Keep the four-character product token as a secondary candidate for GameTDB eShop entries that intentionally omit a company suffix.
-- Diagnostic remains read-only; no Wii U resolver or metadata mutation is enabled yet.
-
-
-##### v1.6.0-dev13
-- Fix Wii U GameTDB diagnostics: accept any non-empty syntactically valid `wiiutdb.txt` feed instead of rejecting the observed 458-entry response with an arbitrary minimum-size guard.
-- Preserve derived ProductCode/CompanyCode candidates even when the remote catalog request fails.
-- Expose Wii U GameTDB feed diagnostics (entry count, response bytes/content type, first/last IDs) in the diagnostic result so partial-feed behavior is visible.
-- Diagnostic remains strictly read-only.
-
-
-###### v1.6.0-dev14
-- Replace the partial Wii U EN TXT feed with a one-time persistent download of the complete German `wiiutdb.zip` XML catalog.
-- Parse/index 4- and 6-character Wii U GameTDB IDs plus useful catalog metadata locally; container restarts reuse the cached ZIP.
-- Add an explicit manual Wii U GameTDB cache refresh action.
-- Keep Wii U mapping read-only until the full 58-title hardware-validated diagnostic is confirmed.
-
-
-####### v1.6.0-dev15
-- Promote the 100%-validated Wii U GameTDB ProductCode/CompanyCode mapping to the canonical resolver before IGDB.
-- Move Wii to the full persistent German GameTDB XML catalog including WiiWare/GameCube.
-- Add persistent 3DS and Switch GameTDB XML catalog infrastructure; add a 3DS diagnostic that explicitly reports the current exporter's missing ProductCode rather than guessing from TitleID.
-- Prepare the 3DS provider to consume `productCode` as soon as the exporter emits it.
-
-
-######## v1.6.0-dev16
-- Accept Nintendo 3DS exporter schemas 3 and 4 and retain ProductCode result diagnostics.
-- Add one action to download and persist all four Nintendo GameTDB catalogs: Wii, Wii U, Nintendo 3DS and Nintendo Switch.
-- Add an always-visible close button to the Quellen & Resolver header and make its action footer scrollable/wrapping on constrained screens.
-
-
-######### v1.6.0-dev18
-- Fix Nintendo 3DS GameTDB mapping: parse `CTR-X-ABCD` Product Codes to exact GameTDB key `ABCD` rather than stripping punctuation into an invalid `CTRXABCD` key.
-- Replace the stale missing-exporter diagnostic message with detailed ProductCode/candidate/hit coverage and examples.
-- Use the corrected mapping in the central Nintendo 3DS canonical-name resolver before IGDB.
-
-
-########## v1.6.0-dev18
-- Extend the validated Nintendo 3DS ProductCode mapping to accept KTR-prefixed ProductCodes in addition to CTR while preserving the exact GameTDB lookup and all dev17 behavior.
+- Further PS3 MMS field/type decoding and optional SaveData/trophy historical-footprint support without conflating timestamps with Last Played.
+- Console timezone property and canonical UTC normalization for providers exposing local wall-clock timestamps, especially Aurora history.

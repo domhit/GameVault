@@ -14,7 +14,17 @@ GameVault is a self-hosted game collection, backup inventory and console-invento
 - Filtered IGDB refreshes update only the current library selection and retain active filters.
 - SerialStation resolves PlayStation Title IDs to canonical names before IGDB lookup.
 
-## Supported console inventory
+## ### Canonical title resolvers
+- PlayStation -> SerialStation -> IGDB
+- Xbox 360 -> x360db -> IGDB
+- Xbox Classic -> MobCat Xbox IDs -> IGDB
+- Wii -> GameTDB Game ID -> IGDB
+- Wii U -> GameTDB ProductCode + CompanyCode -> IGDB
+- Nintendo 3DS -> GameTDB CTR/KTR ProductCode -> IGDB
+
+Nintendo GameTDB XML catalogs persist under `/data/provider-cache/gametdb`. Native console/exporter titles remain unchanged.
+
+Supported console inventory
 
 | Platform | Inventory source |
 | --- | --- |

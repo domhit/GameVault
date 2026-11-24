@@ -103,54 +103,25 @@ These are explicit tested IDs, not a rule that every non-PCS application is disp
 - Existing confirmed IGDB IDs still take priority over any title search.
 - Missing or unavailable resolver data falls back to the original console title.
 
+### Nintendo / GameTDB resolvers
+GameVault preserves console/exporter titles. GameTDB supplies canonical resolver names before IGDB, while confirmed IGDB IDs retain priority. Nintendo XML catalogs persist under `/data/provider-cache/gametdb`.
 
-#### Wii / GameTDB resolver
-- Wii keeps the title read from the USB Loader GX/GameVault exporter as the console-native title.
-- Resolver order for an unresolved Wii game is: six-character Wii Game ID -> cached GameTDB English title -> existing tested `TITLE_OVERRIDES` fallback -> console/exporter title -> IGDB.
-- GameTDB resolver output is logged and used as IGDB search input; it does not overwrite the stored console-native title.
-- GameTDB's Wii title list is cached in memory for 6 hours by default (`GAMETDB_CACHE_SECONDS`). One bulk list is loaded, never one HTTP request per game.
+#### Wii
+- Six-character Game ID -> `wiitdb.zip?LANG=DE&WIIWARE=1&GAMECUBE=1` -> IGDB.
+- Tested `TITLE_OVERRIDES` remain fallback-only. `CUSTOM` entries may fill missing metadata/cover after IGDB not-found; manual and IGDB fields stay protected.
 
-#### Library cache during batch jobs
-- Large mutation jobs suspend automatic library-cache rebuild scheduling while commits are in progress.
-- Commits still mark the cache dirty and advance its generation.
-- When the outer batch ends, exactly one debounced background rebuild is scheduled.
-- Direct fallback and last-known-good snapshot behavior remain unchanged.
+#### Wii U
+- `productCode` + `companyCode` -> exact six-character candidate, then exact four-character product candidate in `wiiutdb.zip?LANG=DE`.
+- Validated on the real collection at 58/58 mappings before productive use.
 
+#### Nintendo 3DS
+- Schema-4 ProductCode `CTR-X-ABCD` or `KTR-X-ABCD` -> exact `ABCD` in `3dstdb.zip?LANG=DE`. TitleID/Unique ID are not guessed into GameTDB IDs.
+- Legacy schema 3 remains readable but lacks ProductCode resolution. Hardware validation reached full mapping coverage before productive use.
 
-###### Wii GameTDB Custom metadata fallback
-- Normal Wii releases keep IGDB as primary metadata source.
-- When IGDB has no match, GameVault may inspect the public GameTDB page for the Wii Game ID. Only entries explicitly reported as `CUSTOM` may fill missing developer, publisher, genre, release date, synopsis, region, player hint and cover. Manual fields and existing local covers are never overwritten.
+#### Nintendo Switch
+- `switchtdb.zip?LANG=DE` can be cached, but no productive resolver is enabled until real tested exporter identifiers exist.
 
-- GameTDB detail parsing treats known page labels as structural markers. Empty fields remain empty and cannot become values such as `publisher`, `release date`, `rating`, or `players`. Explicit Custom enrichment may update or clear fields previously sourced from GameTDB, while manual and IGDB fields remain protected.
-
-
-#### Wii U / GameTDB diagnostic mapping
-- dev11 does not yet use GameTDB as a Wii U resolver. It performs a read-only coverage diagnostic.
-- The Wii U exporter already preserves `productCode` and `companyCode` in InstalledGame raw metadata. Candidate GameTDB IDs are derived from the four-character Wii U product token plus the final two characters of the Nintendo company code: `WUP-P-ABAP` + `0001` -> `ABAP01`. The four-character token (`ABAP`) is retained only as a secondary fallback for GameTDB entries without a company suffix.
-- No Wii U Game, Title ID, Product Code or metadata is changed by the diagnostic. Resolver implementation is allowed only after real-hardware coverage is reviewed.
-
-
-##### Wii U / GameTDB full XML cache (dev14)
-- Wii U no longer uses the incomplete `wiiutdb.txt?LANG=EN` feed. GameVault downloads the complete `wiiutdb.zip?LANG=DE` XML catalog once and stores it persistently under `/data/provider-cache/gametdb/wiiutdb-DE.zip`.
-- Container restarts load the persistent ZIP locally; no periodic HTTP refresh is required. A manual refresh action is available under `Quellen & Resolver`.
-- Both GameTDB ID forms are indexed because the real catalog contains both: 6-character Product+Company IDs and 4-character Product IDs. Candidate priority remains exact 6-character ID, then exact 4-character ID.
-- The Wii U diagnostic remains read-only in dev14. Existing Wii U Game/IGDB metadata is not modified.
-
-
-###### Nintendo persistent GameTDB resolvers (dev15)
-- Wii uses a persistent local copy of `wiitdb.zip?LANG=DE&WIIWARE=1&GAMECUBE=1` and exact six-character Game ID lookup before IGDB. Existing Wii Custom behavior and overrides remain fallbacks.
-- Wii U is now a productive canonical-name resolver after 58/58 hardware-validation: exporter `productCode` + `companyCode` generates exact 6/4-character GameTDB candidates against the persistent full XML catalog; confirmed IGDB IDs still take priority.
-- Nintendo 3DS uses persistent `3dstdb.zip?LANG=DE`, but productive resolution is enabled only when a future exporter supplies `productCode`; current TitleID/uniqueId data are not guessed into GameTDB IDs.
-- Nintendo Switch infrastructure uses persistent `switchtdb.zip?LANG=DE`; no console resolver is activated until real exporter/hardware identifier fields exist.
-- All XML catalogs download once to `/data/provider-cache/gametdb` and persist across container restarts; manual force-refresh APIs are available.
-
-
-######## Nintendo 3DS ProductCode mapping (dev17)
-- libctru exporter Product Codes such as `CTR-P-AMKP` are structurally normalized to GameTDB ID `AMKP`; hyphen removal to `CTRPAMKP` is explicitly forbidden.
-- Lookup is exact against the persistent local `3dstdb.zip?LANG=DE` XML index. TitleID and Unique ID are not guessed into GameTDB identifiers.
-- The diagnostic reports full ProductCode, derived candidate, exact GameTDB hit, local catalog size and unmatched examples. The central 3DS canonical-name resolver uses the same mapping before IGDB.
-
-
-######### Nintendo 3DS KTR ProductCodes (dev18)
-- The Nintendo 3DS GameTDB ProductCode resolver accepts both `CTR-X-ABCD` and `KTR-X-ABCD` forms and maps either structurally to exact GameTDB key `ABCD`.
-- Existing four-character normalized IDs remain accepted; TitleID/UniqueID guessing remains forbidden.
+### Library read cache
+- The complete library remains eagerly loaded/rendered; no pagination or scroll-triggered fetches.
+- Commits invalidate the precomputed full-library snapshot. Batch operations suspend intermediate rebuilds and schedule one rebuild at completion.
+- The last valid snapshot remains available during rebuild; cold/broken cache falls back to direct PostgreSQL serialization.

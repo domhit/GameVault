@@ -8,7 +8,7 @@
 - Axekinn/ps4-scraper datasets: PS4 catalog/update-summary fallback used by online resolver helpers.
 - xenia-manager/x360db: Xbox 360 Title-ID to canonical-name resolution plus optional metadata/cover enrichment.
 - MobCat Original Xbox Title ID Database/API: Xbox Classic Title-ID/XMID/region resolution and canonical names.
-- GameTDB/WiiTDB: Wii Game-ID resolution plus a persistent local copy of the complete Wii U XML catalog (`wiiutdb.zip?LANG=DE`) for ProductCode/CompanyCode diagnostics and future canonical-name resolution.
+- GameTDB: persistent Nintendo catalogs and canonical-name resolution for Wii (`wiitdb.zip`), Wii U (`wiiutdb.zip`) and Nintendo 3DS (`3dstdb.zip`); Switch catalog caching is prepared but no productive Switch resolver is enabled.
 - gauss77/Multiman-Resources and st-alves/ps3-covers: PS3 covers.
 - xlenore/ps2-covers: PS2 covers.
 
@@ -23,7 +23,7 @@ Artwork and metadata remain property of their respective owners/providers.
 
 GameVault console providers are read-only scanners. The application does not intentionally modify console databases, Game Data, save data, ISOs or Title Updates.
 
-- Nintendo 3DS: GameVault Nintendo 3DS Exporter v0.1.0 `installed_titles.json`, read-only over FTP. System title metadata remains console-derived.
+- Nintendo 3DS: GameVault Nintendo 3DS Exporter v0.1.1 schema-4 `installed_titles.json`, including read-only ProductCode export for exact GameTDB resolution; schema 3 remains backward compatible.
 
 - PlayStation Vita: VitaShell FTP, Sony shell `ur0:/shell/db/app.db`, and read-only game/patch/add-on `PARAM.SFO` metadata.
 
