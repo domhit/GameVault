@@ -1,6 +1,7 @@
 # GameVault Backlog
 
 ## v1.6 release preparation
+- Duplikat-Merge preserves InstalledGame paths and saved selections on the surviving library record.
 - Duplikatvergleich zeigt entscheidungsrelevante Installations-/ROM-Pfade und begrenzte Cover statt allgemeiner Metadatenfelder.
 - Duplikatsuche uses indexed same-platform candidate blocks and bounded result output instead of a full all-pairs comparison.
 - Final regression testing across all real console inventories, library cache, metadata refresh, covers and responsive UI before `v1.6.0-rc1`.
