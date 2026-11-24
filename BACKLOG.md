@@ -1,6 +1,7 @@
 # GameVault Backlog
 
 ## v1.6 release preparation
+- Duplikatsuche uses indexed same-platform candidate blocks and bounded result output instead of a full all-pairs comparison.
 - Final regression testing across all real console inventories, library cache, metadata refresh, covers and responsive UI before `v1.6.0-rc1`.
 - Keep resolver rules and third-party attribution synchronized with implementation.
 
